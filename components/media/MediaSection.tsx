@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Upload, X, Image as ImageIcon, Mic, Loader2,
-  Trash2, Download, Eye, FileAudio, ZoomIn,
+  Trash2, Download, FileAudio, ZoomIn,
 } from 'lucide-react'
 import { uploadMedia, deleteMedia, getOrderMedia } from '@/actions/media'
 import type { MediaWithUrl } from '@/actions/media'
 import { formatRelativeTime } from '@/lib/utils/format-date'
 import { cn } from '@/lib/utils/cn'
+import { VoiceRecorder } from './VoiceRecorder'
 
 interface MediaSectionProps {
   orderId: string
@@ -100,52 +101,61 @@ export function MediaSection({
 
   return (
     <div className="space-y-4">
-      {/* Upload zone */}
+      {/* Upload zone + voice recorder */}
       {canUpload && (
-        <div
-          onDrop={handleDrop}
-          onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
-          onDragLeave={() => setIsDragging(false)}
-          className={cn(
-            'border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer',
-            isDragging
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'
-          )}
-          onClick={() => document.getElementById(`file-input-${orderId}`)?.click()}
-        >
-          <input
-            id={`file-input-${orderId}`}
-            type="file"
-            accept={ALLOWED_ACCEPT}
-            multiple
-            className="hidden"
-            onChange={e => e.target.files && handleFiles(e.target.files)}
-          />
+        <div className="space-y-3">
+          {/* Drag & drop zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+            onDragLeave={() => setIsDragging(false)}
+            className={cn(
+              'border-2 border-dashed rounded-xl p-5 text-center transition-colors cursor-pointer',
+              isDragging
+                ? 'border-emerald-400 bg-emerald-50'
+                : 'border-slate-200 hover:border-emerald-300 hover:bg-slate-50/60'
+            )}
+            onClick={() => document.getElementById(`file-input-${orderId}`)?.click()}
+          >
+            <input
+              id={`file-input-${orderId}`}
+              type="file"
+              accept={ALLOWED_ACCEPT}
+              multiple
+              className="hidden"
+              onChange={e => e.target.files && handleFiles(e.target.files)}
+            />
 
-          {uploading ? (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-              <p className="text-sm text-blue-600 font-medium">Uploading…</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex justify-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <ImageIcon className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <Mic className="w-5 h-5 text-purple-600" />
-                </div>
+            {uploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#10b981' }} />
+                <p className="text-sm font-medium" style={{ color: '#065f46' }}>Uploading…</p>
               </div>
-              <p className="text-sm font-medium text-slate-700">
-                Drop files here or <span className="text-blue-600">click to browse</span>
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Reference images (JPEG, PNG, WebP) · Voice notes (MP3, WebM, WAV) · Max 10MB / 25MB
-              </p>
-            </>
-          )}
+            ) : (
+              <>
+                <div className="flex justify-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(52,211,153,0.12)' }}>
+                    <ImageIcon className="w-5 h-5" style={{ color: '#059669' }} />
+                  </div>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(167,139,250,0.12)' }}>
+                    <Upload className="w-5 h-5 text-purple-500" />
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-slate-700">
+                  Drop files here or <span style={{ color: '#059669' }}>click to browse</span>
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Images (JPEG, PNG, WebP) · Audio files (MP3, WebM, WAV) · Max 10 MB / 25 MB
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* In-browser voice recorder */}
+          <VoiceRecorder
+            disabled={uploading}
+            onUpload={async (file) => { await handleFiles([file]) }}
+          />
         </div>
       )}
 
