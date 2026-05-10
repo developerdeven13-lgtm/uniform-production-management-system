@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "PowerShell(cd \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" -PassThru | Out-Null; Get-ChildItem -Path . -Recurse | Where-Object { $_.PSIsContainer } | Select-Object -First 50 @{Name='Path'; Expression={$_.FullName -replace [regex]::Escape\\(\"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\"\\), \".\"}} | Select-Object -ExpandProperty Path | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\\\\components\" -Recurse | Where-Object { $_.Extension -in '.tsx', '.ts' } | Select-Object FullName)",
+      "Bash(npx tsc *)",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" status)",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" diff)",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" log --oneline -5)",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" add \"app/\\(admin\\)/orders/page.tsx\" \"app/\\(admin\\)/orders/loading.tsx\" \"app/\\(admin\\)/orders/[orderId]/loading.tsx\" \"app/\\(admin\\)/orders/[orderId]/timeline/loading.tsx\" \"components/orders/ClickableOrderRow.tsx\" \"lib/utils/format-date.ts\" \"next.config.ts\")",
+      "Bash(git -C 'c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system' commit -m ' *)",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" push origin main)",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" add \"app/\\(admin\\)/assignments/page.tsx\" \"app/\\(admin\\)/customers/[customerId]/edit/page.tsx\" \"app/\\(admin\\)/customers/[customerId]/page.tsx\" \"app/\\(admin\\)/customers/new/page.tsx\" \"app/\\(admin\\)/customers/page.tsx\" \"app/\\(admin\\)/layout.tsx\" \"app/\\(admin\\)/orders/[orderId]/page.tsx\" \"app/\\(admin\\)/orders/[orderId]/timeline/page.tsx\" \"app/\\(admin\\)/orders/new/page.tsx\" \"app/\\(admin\\)/orders/page.tsx\" \"app/\\(dashboard\\)/dashboard/page.tsx\" \"app/\\(dashboard\\)/layout.tsx\" \"app/\\(embroidery\\)/layout.tsx\" \"app/\\(embroidery\\)/queue/page.tsx\" \"app/\\(tailor\\)/layout.tsx\" \"app/\\(tailor\\)/my-tasks/page.tsx\" \"components/layout/AppShell.tsx\" \"components/layout/Sidebar.tsx\" \"components/layout/TopBar.tsx\" \"middleware.ts\" \"lib/auth/\")",
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" diff --stat)"
     ]
   }
 }
