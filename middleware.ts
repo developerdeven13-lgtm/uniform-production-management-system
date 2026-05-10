@@ -2,10 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { UserRole } from '@/types/app.types'
 
-// Routes accessible without authentication
 const PUBLIC_ROUTES = ['/login', '/reset-password', '/update-password']
 
-// Role-based route prefix access
 const ROLE_ROUTE_MAP: Record<string, UserRole[]> = {
   '/settings/users': ['super_admin'],
   '/settings': ['super_admin', 'admin'],
@@ -19,7 +17,6 @@ const ROLE_ROUTE_MAP: Record<string, UserRole[]> = {
 }
 
 function hasRouteAccess(pathname: string, role: UserRole): boolean {
-  // Check from most specific to least specific
   const sortedRoutes = Object.keys(ROLE_ROUTE_MAP).sort((a, b) => b.length - a.length)
   for (const route of sortedRoutes) {
     if (pathname.includes(route)) {
@@ -27,11 +24,15 @@ function hasRouteAccess(pathname: string, role: UserRole): boolean {
       return allowed !== undefined && allowed.includes(role)
     }
   }
-  return true // allow unknown routes (handled by page-level guards)
+  return true
 }
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  // Build augmented request headers — we'll add user data to them after auth
+  const requestHeaders = new Headers(request.headers)
+
+  // Collect cookies that Supabase wants to set (to apply them to the response later)
+  const pendingCookies: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,43 +44,36 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(c => pendingCookies.push(c as typeof pendingCookies[0]))
         },
       },
     }
   )
 
-  // Refresh session — always call getUser() not getSession()
+  // Single getUser() call for the entire request — result forwarded to pages via headers
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
-  const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
+  const isPublicRoute = PUBLIC_ROUTES.some(r => pathname.startsWith(r))
   const isApiRoute = pathname.startsWith('/api/')
 
-  // Unauthenticated: redirect to login (except public routes + API routes)
   if (!user && !isPublicRoute && !isApiRoute) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Authenticated user hitting login page: redirect to dashboard
   if (user && isPublicRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Role-based access control
   if (user && !isPublicRoute && !isApiRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_active')
+      .select('role, is_active, full_name')
       .eq('id', user.id)
       .single()
 
-    // Deactivated user: force logout
     if (profile && !profile.is_active) {
       await supabase.auth.signOut()
       return NextResponse.redirect(new URL('/login?error=account_disabled', request.url))
@@ -88,9 +82,25 @@ export async function middleware(request: NextRequest) {
     if (profile && !hasRouteAccess(pathname, profile.role as UserRole)) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+
+    // Forward user data as request headers so server components can read them
+    // without making additional Supabase calls
+    if (profile) {
+      requestHeaders.set('x-user-id', user.id)
+      requestHeaders.set('x-user-role', profile.role)
+      requestHeaders.set('x-user-name', profile.full_name)
+    }
   }
 
-  return supabaseResponse
+  // Build the final response with augmented request headers
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
+
+  // Apply any Supabase auth cookies (token refresh)
+  pendingCookies.forEach(({ name, value, options }) =>
+    response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+  )
+
+  return response
 }
 
 export const config = {

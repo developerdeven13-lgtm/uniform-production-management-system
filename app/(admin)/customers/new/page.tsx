@@ -1,13 +1,10 @@
 import { CustomerForm } from '@/components/customers/CustomerForm'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 
 export default async function NewCustomerPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  await requireUser()
 
   return (
     <div className="max-w-2xl space-y-5">

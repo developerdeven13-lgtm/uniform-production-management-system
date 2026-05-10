@@ -1,20 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import { getTailorWorkload, getMyAssignments } from '@/actions/assignments'
 import { TailorWorkloadCard } from '@/components/assignments/TailorWorkloadCard'
 import { AssignmentBoard } from '@/components/assignments/AssignmentBoard'
-import type { Profile } from '@/types/app.types'
-
 export default async function AssignmentsPage() {
+  const user = await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const profile = { role: user.role }
 
   // Get unassigned (confirmed) order items
   const { data: unassignedItems } = await supabase

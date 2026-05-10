@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { NewOrderShell } from '@/components/orders/NewOrderShell'
@@ -10,9 +10,8 @@ export default async function NewOrderPage({
 }: {
   searchParams: Promise<{ customer_id?: string; mode?: string }>
 }) {
+  await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const params = await searchParams
   let prefillCustomer: Customer | undefined

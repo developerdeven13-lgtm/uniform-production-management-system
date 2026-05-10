@@ -8,9 +8,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { can } from '@/lib/permissions/can'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
 import type { UserRole } from '@/types/app.types'
 import type { Permission } from '@/lib/permissions/permissions'
+import type { ServerUser } from '@/lib/auth/server-session'
 
 interface NavItem {
   label: string
@@ -71,16 +71,16 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 interface SidebarProps {
+  profile: ServerUser
   onClose?: () => void
 }
 
-export function Sidebar({ onClose }: SidebarProps) {
+export function Sidebar({ profile, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const { profile } = useCurrentUser()
-  const role = profile?.role as UserRole | undefined
+  const role = profile.role as UserRole
 
   const visibleItems = NAV_ITEMS.filter(item => {
-    if (item.roles) return role && item.roles.includes(role)
+    if (item.roles) return item.roles.includes(role)
     if (item.permission) return can(role, item.permission)
     return true
   })
@@ -146,25 +146,23 @@ export function Sidebar({ onClose }: SidebarProps) {
         })}
       </nav>
 
-      {/* User info */}
-      {profile && (
-        <div className="px-3 py-4 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-              style={{ background: '#34d399', color: '#0f2e1e' }}
-            >
-              {profile.full_name.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">{profile.full_name}</p>
-              <p className="text-xs capitalize truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {profile.role.replace(/_/g, ' ')}
-              </p>
-            </div>
+      {/* User info — renders immediately from server-provided profile */}
+      <div className="px-3 py-4 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+            style={{ background: '#34d399', color: '#0f2e1e' }}
+          >
+            {profile.full_name.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white truncate">{profile.full_name}</p>
+            <p className="text-xs capitalize truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {profile.role.replace(/_/g, ' ')}
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

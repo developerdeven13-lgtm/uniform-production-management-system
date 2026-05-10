@@ -1,12 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import { getEmbroideryQueue } from '@/actions/embroidery'
 import { EmbroideryQueueList } from '@/components/assignments/EmbroideryQueueList'
 
 export default async function EmbroideryQueuePage() {
+  await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   // Get available embroidery staff for admin assignment
   const { data: embroideryStaff } = await supabase

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight, Edit, Phone, Mail, Building2, MapPin, StickyNote } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format-date'
@@ -11,9 +12,8 @@ export default async function CustomerDetailPage({
 }: {
   params: Promise<{ customerId: string }>
 }) {
+  await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const { customerId } = await params
 

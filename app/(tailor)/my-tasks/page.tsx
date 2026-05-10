@@ -1,11 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import { MyTasksList } from '@/components/assignments/MyTasksList'
 
 export default async function MyTasksPage() {
+  const user = await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const { data } = await supabase
     .from('tailor_assignments')

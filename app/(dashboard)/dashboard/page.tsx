@@ -1,12 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
 import { ClipboardList, Users, Clock, CheckCircle, ArrowUpRight, TrendingUp } from 'lucide-react'
 
 export default async function DashboardPage() {
+  await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const [ordersResult, customersResult] = await Promise.all([
     supabase.from('orders').select('status, priority', { count: 'exact' }),

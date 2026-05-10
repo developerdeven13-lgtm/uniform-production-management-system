@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight, ArrowRight } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
@@ -11,9 +12,8 @@ export default async function OrderTimelinePage({
 }: {
   params: Promise<{ orderId: string }>
 }) {
+  await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const { orderId } = await params
 

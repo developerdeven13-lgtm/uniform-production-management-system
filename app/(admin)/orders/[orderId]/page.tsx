@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
   ChevronRight, Calendar, User, Package,
@@ -19,23 +20,17 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ orderId: string }>
 }) {
+  const user = await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const { orderId } = await params
 
-  // Fetch everything in separate, simple queries to avoid FK join issues
-  const [orderRes, profileRes] = await Promise.all([
-    supabase.from('orders').select('*').eq('id', orderId).single(),
-    supabase.from('profiles').select('id, full_name, role').eq('id', user.id).single(),
-  ])
+  const orderRes = await supabase.from('orders').select('*').eq('id', orderId).single()
 
   if (!orderRes.data || orderRes.error) notFound()
 
   const order = orderRes.data
-  const userRole = profileRes.data?.role as UserRole | undefined
-  const userProfile = profileRes.data
+  const userRole = user.role
 
   // Fetch related data separately
   const [customerRes, itemsRes, creatorRes, mediaResult] = await Promise.all([

@@ -1,5 +1,7 @@
 import { AppShell } from '@/components/layout/AppShell'
+import { requireUser } from '@/lib/auth/server-session'
 
-export default function TailorLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>
+export default async function TailorLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireUser()
+  return <AppShell profile={user}>{children}</AppShell>
 }

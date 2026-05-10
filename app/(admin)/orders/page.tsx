@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
 import { Plus, Search, AlertTriangle } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
@@ -13,9 +13,8 @@ export default async function OrdersPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; priority?: string; page?: string }>
 }) {
+  const user = await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const params = await searchParams
   const query = params.q ?? ''

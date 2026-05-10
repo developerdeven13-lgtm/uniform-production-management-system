@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format-date'
@@ -10,9 +10,8 @@ export default async function CustomersPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string }>
 }) {
+  await requireUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
   const params = await searchParams
   const query = params.q ?? ''
