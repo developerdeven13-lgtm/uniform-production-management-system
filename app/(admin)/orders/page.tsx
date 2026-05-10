@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Search, AlertTriangle } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
+import { ClickableOrderRow } from '@/components/orders/ClickableOrderRow'
 import { formatDate } from '@/lib/utils/format-date'
 import { ORDER_STATUSES } from '@/lib/constants/order-statuses'
 import type { Order, OrderStatus } from '@/types/app.types'
@@ -166,12 +167,11 @@ export default async function OrdersPage({
                 <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide hidden sm:table-cell">Items</th>
                 <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide hidden md:table-cell">Delivery</th>
                 <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide hidden md:table-cell">Created</th>
-                <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {(orders as (Order & { customer: { full_name: string; phone: string } | null })[]).map(order => (
-                <tr key={order.id} className="hover:bg-slate-50/70 transition-colors group">
+                <ClickableOrderRow key={order.id} orderId={order.id}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-slate-800">{order.order_number}</span>
@@ -196,15 +196,7 @@ export default async function OrdersPage({
                   <td className="px-5 py-3.5 text-slate-400 text-xs hidden md:table-cell">
                     {formatDate(order.created_at)}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <Link
-                      href={`/orders/${order.id}`}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-[#0f2e1e] hover:text-white hover:border-[#0f2e1e] transition-all"
-                    >
-                      View →
-                    </Link>
-                  </td>
-                </tr>
+                </ClickableOrderRow>
               ))}
             </tbody>
           </table>
