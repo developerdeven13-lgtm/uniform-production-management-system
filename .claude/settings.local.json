@@ -13,7 +13,10 @@
       "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" push origin main)",
       "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" add \"app/\\(admin\\)/assignments/page.tsx\" \"app/\\(admin\\)/customers/[customerId]/edit/page.tsx\" \"app/\\(admin\\)/customers/[customerId]/page.tsx\" \"app/\\(admin\\)/customers/new/page.tsx\" \"app/\\(admin\\)/customers/page.tsx\" \"app/\\(admin\\)/layout.tsx\" \"app/\\(admin\\)/orders/[orderId]/page.tsx\" \"app/\\(admin\\)/orders/[orderId]/timeline/page.tsx\" \"app/\\(admin\\)/orders/new/page.tsx\" \"app/\\(admin\\)/orders/page.tsx\" \"app/\\(dashboard\\)/dashboard/page.tsx\" \"app/\\(dashboard\\)/layout.tsx\" \"app/\\(embroidery\\)/layout.tsx\" \"app/\\(embroidery\\)/queue/page.tsx\" \"app/\\(tailor\\)/layout.tsx\" \"app/\\(tailor\\)/my-tasks/page.tsx\" \"components/layout/AppShell.tsx\" \"components/layout/Sidebar.tsx\" \"components/layout/TopBar.tsx\" \"middleware.ts\" \"lib/auth/\")",
       "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" diff --stat)",
-      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" add \"app/\\(admin\\)/assignments/page.tsx\")"
+      "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" add \"app/\\(admin\\)/assignments/page.tsx\")",
+      "Bash(Find all *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

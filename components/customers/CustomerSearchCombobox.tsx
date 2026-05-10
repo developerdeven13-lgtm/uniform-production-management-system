@@ -9,9 +9,10 @@ import Link from 'next/link'
 interface CustomerSearchComboboxProps {
   value: Customer | null
   onChange: (customer: Customer | null) => void
+  onCreateNew?: () => void  // when provided, fires instead of navigating to /customers/new
 }
 
-export function CustomerSearchCombobox({ value, onChange }: CustomerSearchComboboxProps) {
+export function CustomerSearchCombobox({ value, onChange, onCreateNew }: CustomerSearchComboboxProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
@@ -117,13 +118,24 @@ export function CustomerSearchCombobox({ value, onChange }: CustomerSearchCombob
               <p className="text-sm text-slate-500 mb-3">
                 No customers found for &ldquo;{query}&rdquo;
               </p>
-              <Link
-                href={`/customers/new`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 border border-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                <UserPlus className="w-4 h-4" />
-                Create new customer
-              </Link>
+              {onCreateNew ? (
+                <button
+                  type="button"
+                  onMouseDown={onCreateNew}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 border border-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Create new customer
+                </button>
+              ) : (
+                <Link
+                  href="/customers/new"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 border border-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Create new customer
+                </Link>
+              )}
             </div>
           ) : null}
         </div>
@@ -133,9 +145,15 @@ export function CustomerSearchCombobox({ value, onChange }: CustomerSearchCombob
       {!open && (
         <p className="text-xs text-slate-400 mt-1.5">
           Type at least 2 characters to search. No customers yet?{' '}
-          <Link href="/customers/new" className="text-blue-500 hover:text-blue-700 underline">
-            Create one first
-          </Link>
+          {onCreateNew ? (
+            <button type="button" onClick={onCreateNew} className="text-blue-500 hover:text-blue-700 underline">
+              Create one first
+            </button>
+          ) : (
+            <Link href="/customers/new" className="text-blue-500 hover:text-blue-700 underline">
+              Create one first
+            </Link>
+          )}
         </p>
       )}
     </div>

@@ -127,9 +127,12 @@ export function VoiceIntakePanel({ onExtracted }: VoiceIntakePanelProps) {
       if (transcript.trim().length > 10) {
         formData.append('transcript', transcript)
       } else {
-        const mimeType = audioChunksRef.current[0]?.type ?? 'audio/webm'
+        // Strip codec suffix — browsers may report "audio/webm;codecs=opus"
+        const rawMime = audioChunksRef.current[0]?.type ?? 'audio/webm'
+        const mimeType = rawMime.split(';')[0]!.trim()
+        const ext = mimeType.split('/')[1] ?? 'webm'
         const blob = new Blob(audioChunksRef.current, { type: mimeType })
-        formData.append('audio', blob, `recording.${mimeType.split('/')[1]}`)
+        formData.append('audio', blob, `recording.${ext}`)
       }
 
       const res = await fetch('/api/ai/transcribe', {

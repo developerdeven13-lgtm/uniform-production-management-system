@@ -72,6 +72,73 @@ export async function createCustomer(
   return { success: true, data: data as Customer }
 }
 
+// Quick-create for inline flows (e.g. AI order intake) — accepts a plain object instead of FormData
+export async function createCustomerQuick(input: {
+  full_name: string
+  phone: string
+  organization?: string | null
+}): Promise<ActionResult<Customer>> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const parsed = CustomerSchema.safeParse({
+    full_name: input.full_name,
+    phone: input.phone,
+    organization: input.organization ?? null,
+    email: null,
+    phone_alt: null,
+    address: null,
+    notes: null,
+  })
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: 'Validation failed',
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    }
+  }
+
+  const normalizedPhone = parsed.data.phone.replace(/[^0-9]/g, '')
+  const { data: existing } = await supabase
+    .from('customers')
+    .select('id, full_name, phone')
+    .eq('phone_normalized', normalizedPhone)
+    .maybeSingle()
+
+  if (existing) {
+    return {
+      success: false,
+      error: `A customer with this phone number already exists: ${existing.full_name}`,
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('customers')
+    .insert({ ...parsed.data, created_by: user.id })
+    .select()
+    .single()
+
+  if (error || !data) {
+    return { success: false, error: 'Failed to create customer. Please try again.' }
+  }
+
+  try {
+    const admin = createAdminClient()
+    await admin.from('audit_logs').insert({
+      actor_id: user.id,
+      action: 'customer.create',
+      resource_type: 'customer',
+      resource_id: data.id,
+      after_state: data,
+    })
+  } catch { /* non-fatal */ }
+
+  revalidatePath('/customers')
+  return { success: true, data: data as Customer }
+}
+
 export async function updateCustomer(
   customerId: string,
   _prevState: ActionResult<Customer>,

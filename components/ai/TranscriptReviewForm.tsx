@@ -3,13 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronUp, Loader2, RotateCcw, FileText } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, RotateCcw, FileText, UserPlus, X } from 'lucide-react'
 import { useOrderDraftStore } from '@/store/order-draft-store'
 import { AIFieldHighlight } from './AIFieldHighlight'
 import { AmbiguityAlert } from './AmbiguityAlert'
-import { PRODUCT_TYPES, MEASUREMENT_FIELDS } from '@/lib/constants/products'
+import { PRODUCT_TYPES } from '@/lib/constants/products'
 import { createOrder } from '@/actions/orders'
-import { searchCustomersForDedup } from '@/actions/customers'
+import { createCustomerQuick } from '@/actions/customers'
 import type { Customer } from '@/types/app.types'
 import { CustomerSearchCombobox } from '@/components/customers/CustomerSearchCombobox'
 
@@ -23,6 +23,9 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [showTranscript, setShowTranscript] = useState(false)
+  const [showQuickCreate, setShowQuickCreate] = useState(false)
+  const [quickCreateForm, setQuickCreateForm] = useState({ full_name: '', phone: '', organization: '' })
+  const [quickCreateLoading, setQuickCreateLoading] = useState(false)
 
   const {
     customerName, customerPhone, customerOrganization,
@@ -43,6 +46,39 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
     if (!item) return null
     const aiField = item.aiFields[field]
     return aiField?.isAiFilled ? aiField.confidence : null
+  }
+
+  const openQuickCreate = () => {
+    setQuickCreateForm({
+      full_name: customerName ?? '',
+      phone: customerPhone ?? '',
+      organization: customerOrganization ?? '',
+    })
+    setShowQuickCreate(true)
+  }
+
+  const handleQuickCreate = async () => {
+    if (!quickCreateForm.full_name.trim() || !quickCreateForm.phone.trim()) {
+      toast.error('Name and phone are required')
+      return
+    }
+    setQuickCreateLoading(true)
+    try {
+      const result = await createCustomerQuick({
+        full_name: quickCreateForm.full_name.trim(),
+        phone: quickCreateForm.phone.trim(),
+        organization: quickCreateForm.organization.trim() || null,
+      })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      setSelectedCustomer(result.data)
+      setShowQuickCreate(false)
+      toast.success(`Customer "${result.data.full_name}" created and linked`)
+    } finally {
+      setQuickCreateLoading(false)
+    }
   }
 
   const canSubmit = selectedCustomer && allAmbiguousConfirmed()
@@ -135,7 +171,19 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
 
       {/* Customer section */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h3 className="font-semibold text-slate-900">Customer</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900">Customer</h3>
+          {!selectedCustomer && !showQuickCreate && (
+            <button
+              type="button"
+              onClick={openQuickCreate}
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              New customer
+            </button>
+          )}
+        </div>
 
         {customerName || customerPhone ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm">
@@ -154,15 +202,91 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
           </div>
         ) : null}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Link to Customer Record <span className="text-red-500">*</span>
-          </label>
-          <CustomerSearchCombobox value={selectedCustomer} onChange={setSelectedCustomer} />
-          <p className="text-xs text-slate-400 mt-1">
-            Search by the name or phone AI detected, then select the correct customer.
-          </p>
-        </div>
+        {/* Inline quick-create panel */}
+        {showQuickCreate && (
+          <div className="border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-800">Create new customer</p>
+              <button
+                type="button"
+                onClick={() => setShowQuickCreate(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={quickCreateForm.full_name}
+                  onChange={e => setQuickCreateForm(f => ({ ...f, full_name: e.target.value }))}
+                  placeholder="e.g. Dr. Sita Sharma"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={quickCreateForm.phone}
+                  onChange={e => setQuickCreateForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="e.g. 9841000000"
+                  className={inputCls}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Organization</label>
+                <input
+                  type="text"
+                  value={quickCreateForm.organization}
+                  onChange={e => setQuickCreateForm(f => ({ ...f, organization: e.target.value }))}
+                  placeholder="e.g. Midas Health Services"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setShowQuickCreate(false)}
+                className="px-3 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleQuickCreate}
+                disabled={quickCreateLoading}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {quickCreateLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {quickCreateLoading ? 'Creating…' : 'Create & Link'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!showQuickCreate && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Link to Customer Record <span className="text-red-500">*</span>
+            </label>
+            <CustomerSearchCombobox
+              value={selectedCustomer}
+              onChange={setSelectedCustomer}
+              onCreateNew={openQuickCreate}
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              Search by the name or phone AI detected, then select the correct customer.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

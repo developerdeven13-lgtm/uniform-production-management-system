@@ -73,7 +73,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No audio file or transcript provided' }, { status: 400 })
       }
 
-      if (!ALLOWED_AUDIO_TYPES.includes(audioFile.type)) {
+      // Strip codec suffix — browsers can report "audio/webm;codecs=opus" but Gemini wants "audio/webm"
+      const normalizedMime = audioFile.type.split(';')[0]!.trim()
+
+      if (!ALLOWED_AUDIO_TYPES.includes(normalizedMime)) {
         return NextResponse.json(
           { error: `Unsupported audio format: ${audioFile.type}. Use WebM, MP3, MP4, OGG, or WAV.` },
           { status: 400 }
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
       const filePart: any = {
         type: 'file',
         data: Buffer.from(audioBuffer),
-        mimeType: audioFile.type,
+        mimeType: normalizedMime,
       }
 
       const { object } = await generateObject({
