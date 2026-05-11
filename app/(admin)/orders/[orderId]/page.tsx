@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
   ChevronRight, Calendar, User, Package,
-  Ruler, MessageSquare, Cpu, AlertTriangle, Clock, Paperclip,
+  Ruler, MessageSquare, Cpu, AlertTriangle, Clock, Paperclip, Pencil,
 } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper'
@@ -114,17 +114,28 @@ export default async function OrderDetailPage({
             {creator && <span> by <span className="font-medium">{creator.full_name}</span></span>}
           </p>
         </div>
-        <Link
-          href={`/orders/${orderId}/timeline`}
-          className="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          View Timeline
-        </Link>
+        <div className="flex items-center gap-2">
+          {userRole && ['super_admin', 'admin', 'support_staff'].includes(userRole) && (
+            <Link
+              href={`/orders/${orderId}/edit`}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </Link>
+          )}
+          <Link
+            href={`/orders/${orderId}/timeline`}
+            className="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            View Timeline
+          </Link>
+        </div>
       </div>
 
       {/* Status stepper + actions — the most important section */}
       <div className="bg-white rounded-xl border-2 border-slate-200 p-5 space-y-4">
-        <h2 className="font-semibold text-slate-900 text-sm uppercase tracking-wide text-slate-500">
+        <h2 className="font-semibold text-sm uppercase tracking-wide text-slate-500">
           Production Status
         </h2>
         <OrderStatusStepper currentStatus={order.status as OrderStatus} />
@@ -206,6 +217,25 @@ export default async function OrderDetailPage({
         </div>
       )}
 
+      {/* Media & References — shown before items so tailors see voice notes and images first */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+        <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+          <Paperclip className="w-4 h-4 text-slate-400" />
+          Media &amp; References
+          {initialMedia.length > 0 && (
+            <span className="text-xs font-normal text-slate-400 ml-1">
+              ({initialMedia.length} file{initialMedia.length !== 1 ? 's' : ''})
+            </span>
+          )}
+        </h2>
+        <MediaSection
+          orderId={orderId}
+          initialMedia={initialMedia}
+          canUpload={canUpload}
+          canDelete={canDelete}
+        />
+      </div>
+
       {/* Order items */}
       <div className="space-y-4">
         <h2 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -237,6 +267,11 @@ export default async function OrderDetailPage({
                       {' '}&times; {item.quantity}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap text-xs">
+                      {item.gender && item.gender !== 'unisex' && (
+                        <span className={`px-1.5 py-0.5 rounded font-medium ${item.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {item.gender === 'female' ? 'Female' : 'Male'}
+                        </span>
+                      )}
                       {item.color && <span className="text-slate-500">Color: <span className="font-medium text-slate-700">{item.color}</span></span>}
                       {item.piping_color && <span className="text-slate-500">Piping: <span className="font-medium text-slate-700">{item.piping_color}</span></span>}
                       {item.has_embroidery && (
@@ -304,24 +339,6 @@ export default async function OrderDetailPage({
         })}
       </div>
 
-      {/* Media & References */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-        <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-          <Paperclip className="w-4 h-4 text-slate-400" />
-          Media &amp; References
-          {initialMedia.length > 0 && (
-            <span className="text-xs font-normal text-slate-400 ml-1">
-              ({initialMedia.length} file{initialMedia.length !== 1 ? 's' : ''})
-            </span>
-          )}
-        </h2>
-        <MediaSection
-          orderId={orderId}
-          initialMedia={initialMedia}
-          canUpload={canUpload}
-          canDelete={canDelete}
-        />
-      </div>
     </div>
   )
 }

@@ -23,6 +23,7 @@ export async function createOrder(data: {
   items: Array<{
     product_type: string
     quantity: number
+    gender?: string | null
     color?: string | null
     piping_color?: string | null
     has_embroidery?: boolean
@@ -78,6 +79,7 @@ export async function createOrder(data: {
     sequence_number: i + 1,
     product_type: item.product_type,
     quantity: item.quantity,
+    gender: item.gender ?? 'unisex',
     color: item.color ?? null,
     piping_color: item.piping_color ?? null,
     has_embroidery: item.has_embroidery ?? false,
@@ -110,6 +112,85 @@ export async function createOrder(data: {
 
   revalidatePath('/orders')
   return { success: true, data: order as Order }
+}
+
+// ============================================================
+// UPDATE ORDER
+// ============================================================
+export async function updateOrder(
+  orderId: string,
+  data: {
+    delivery_date?: string | null
+    priority?: number
+    special_instructions?: string | null
+    items?: Array<{
+      id: string
+      quantity?: number
+      gender?: string
+      color?: string | null
+      piping_color?: string | null
+      has_embroidery?: boolean
+      embroidery_name?: string | null
+      special_instructions?: string | null
+      unit_price?: number | null
+    }>
+  }
+): Promise<ActionResult<Order>> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || !['super_admin', 'admin', 'support_staff'].includes(profile.role)) {
+    return { success: false, error: 'Forbidden' }
+  }
+
+  const orderUpdate: Record<string, unknown> = {}
+  if (data.delivery_date !== undefined) orderUpdate.delivery_date = data.delivery_date
+  if (data.priority !== undefined) orderUpdate.priority = data.priority
+  if (data.special_instructions !== undefined) orderUpdate.special_instructions = data.special_instructions
+
+  if (Object.keys(orderUpdate).length > 0) {
+    const { data: updated, error } = await supabase
+      .from('orders')
+      .update(orderUpdate)
+      .eq('id', orderId)
+      .select()
+      .single()
+
+    if (error || !updated) {
+      return { success: false, error: 'Failed to update order' }
+    }
+  }
+
+  if (data.items && data.items.length > 0) {
+    for (const item of data.items) {
+      const { id, ...fields } = item
+      await supabase.from('order_items').update(fields).eq('id', id)
+    }
+  }
+
+  try {
+    const admin = createAdminClient()
+    await admin.from('audit_logs').insert({
+      actor_id: user.id,
+      action: 'order.update',
+      resource_type: 'order',
+      resource_id: orderId,
+      after_state: { ...orderUpdate },
+    })
+  } catch { /* non-fatal */ }
+
+  revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/orders')
+
+  const { data: refreshed } = await supabase.from('orders').select('*').eq('id', orderId).single()
+  return { success: true, data: refreshed as Order }
 }
 
 // ============================================================

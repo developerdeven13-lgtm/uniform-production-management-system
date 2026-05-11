@@ -1,15 +1,23 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 import { toast } from 'sonner'
-import { Scissors, Calendar, AlertTriangle, Play, CheckCircle, Clock } from 'lucide-react'
+import { Scissors, Calendar, AlertTriangle, Play, CheckCircle, Clock, Image, Mic, ChevronDown, ChevronUp } from 'lucide-react'
 import { markItemStarted, markItemComplete } from '@/actions/assignments'
 import { PRODUCT_LABEL } from '@/lib/constants/products'
 import { formatDate, formatRelativeTime } from '@/lib/utils/format-date'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import type { OrderStatus } from '@/types/app.types'
 import Link from 'next/link'
+
+interface MediaFile {
+  id: string
+  media_type: string
+  file_name: string
+  public_url: string | null
+  duration_seconds: number | null
+}
 
 interface Assignment {
   id: string
@@ -20,6 +28,7 @@ interface Assignment {
     id: string
     product_type: string
     quantity: number
+    gender: string | null
     color: string | null
     has_embroidery: boolean
     embroidery_name: string | null
@@ -31,9 +40,12 @@ interface Assignment {
       status: string
       delivery_date: string | null
       priority: number
+      special_instructions: string | null
       customer: { full_name: string; phone: string } | null
+      media: MediaFile[]
     } | null
     measurements: Record<string, unknown> | null
+    media: MediaFile[]
   } | null
 }
 
@@ -45,12 +57,22 @@ interface MyTasksListProps {
 function TaskCard({ assignment }: { assignment: Assignment }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [showMedia, setShowMedia] = useState(false)
   const item = assignment.order_item
   const order = item?.order
 
   if (!item || !order) return null
 
   const isStarted = Boolean(assignment.started_at)
+
+  // Combine order-level media + item-level media; voice notes and images only
+  const allMedia = [
+    ...(order.media ?? []),
+    ...(item.media ?? []),
+  ].filter(m => m.media_type === 'voice_note' || m.media_type === 'image')
+
+  const voiceNotes = allMedia.filter(m => m.media_type === 'voice_note')
+  const images = allMedia.filter(m => m.media_type === 'image')
 
   const handleStart = () => {
     startTransition(async () => {
@@ -108,13 +130,69 @@ function TaskCard({ assignment }: { assignment: Assignment }) {
         </div>
       </div>
 
+      {/* Voice notes + images — shown at top so tailor sees them immediately */}
+      {allMedia.length > 0 && (
+        <div className="border-b border-slate-100">
+          <button
+            type="button"
+            onClick={() => setShowMedia(s => !s)}
+            className="w-full flex items-center justify-between px-5 py-2.5 bg-blue-50 hover:bg-blue-100 transition-colors text-sm"
+          >
+            <span className="flex items-center gap-2 font-medium text-blue-700">
+              {voiceNotes.length > 0 && <Mic className="w-3.5 h-3.5" />}
+              {images.length > 0 && <Image className="w-3.5 h-3.5" />}
+              {voiceNotes.length > 0 && `${voiceNotes.length} voice note${voiceNotes.length !== 1 ? 's' : ''}`}
+              {voiceNotes.length > 0 && images.length > 0 && ' · '}
+              {images.length > 0 && `${images.length} image${images.length !== 1 ? 's' : ''}`}
+            </span>
+            {showMedia ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />}
+          </button>
+
+          {showMedia && (
+            <div className="px-5 py-3 space-y-3">
+              {voiceNotes.map(vn => (
+                <div key={vn.id} className="space-y-1">
+                  <p className="text-xs text-slate-500 truncate">{vn.file_name}</p>
+                  {vn.public_url ? (
+                    <audio controls src={vn.public_url} className="w-full h-8" />
+                  ) : (
+                    <p className="text-xs text-slate-400">Audio not available</p>
+                  )}
+                </div>
+              ))}
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {images.map(img => (
+                    img.public_url ? (
+                      <a key={img.id} href={img.public_url} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img.public_url}
+                          alt={img.file_name}
+                          className="w-full aspect-square object-cover rounded-lg border border-slate-200"
+                        />
+                      </a>
+                    ) : null
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Item details */}
       <div className="px-5 py-3 space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Scissors className="w-4 h-4 text-slate-400" />
           <span className="text-sm font-medium text-slate-900">
             {PRODUCT_LABEL[item.product_type as keyof typeof PRODUCT_LABEL]} &times; {item.quantity}
           </span>
+          {item.gender && item.gender !== 'unisex' && (
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${item.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
+              {item.gender === 'female' ? 'Female' : 'Male'}
+            </span>
+          )}
           {item.color && <span className="text-sm text-slate-500">· {item.color}</span>}
           {item.has_embroidery && (
             <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
@@ -143,9 +221,15 @@ function TaskCard({ assignment }: { assignment: Assignment }) {
           </div>
         )}
 
+        {order.special_instructions && (
+          <p className="text-sm text-slate-600 bg-amber-50 border border-amber-100 rounded px-3 py-2">
+            <span className="font-medium">Order note:</span> {order.special_instructions}
+          </p>
+        )}
+
         {item.special_instructions && (
           <p className="text-sm text-slate-600 bg-amber-50 border border-amber-100 rounded px-3 py-2">
-            {item.special_instructions}
+            <span className="font-medium">Item note:</span> {item.special_instructions}
           </p>
         )}
 

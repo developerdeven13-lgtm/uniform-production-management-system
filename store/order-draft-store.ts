@@ -6,6 +6,7 @@ import { AMBIGUITY_THRESHOLD } from '@/lib/ai/extract-order-fields'
 export interface DraftOrderItem {
   product_type: string
   quantity: number
+  gender: 'male' | 'female' | 'unisex'
   color: string
   piping_color: string
   has_embroidery: boolean
@@ -25,6 +26,7 @@ export interface OrderDraftState {
   // Order-level
   deliveryDate: string
   specialInstructions: string
+  setDeliveryDate: (date: string) => void
   // Items
   items: DraftOrderItem[]
   // AI metadata
@@ -45,6 +47,7 @@ export interface OrderDraftState {
 const defaultItem = (): DraftOrderItem => ({
   product_type: 'scrubs',
   quantity: 1,
+  gender: 'unisex',
   color: '',
   piping_color: '',
   has_embroidery: false,
@@ -70,6 +73,8 @@ export const useOrderDraftStore = create<OrderDraftState>()(
       ambiguousFields: [],
       confirmedFields: new Set<string>(),
 
+      setDeliveryDate: (date) => set({ deliveryDate: date }),
+
       setFromAI: (fields, ambiguous, transcript = '') => {
         const items: DraftOrderItem[] = fields.items.map(item => {
           const aiFields: Record<string, { confidence: number; isAiFilled: boolean }> = {}
@@ -82,6 +87,7 @@ export const useOrderDraftStore = create<OrderDraftState>()(
 
           setAi('product_type', item.product_type)
           setAi('quantity', item.quantity)
+          setAi('gender', item.gender)
           setAi('color', item.color)
           setAi('piping_color', item.piping_color)
           setAi('has_embroidery', item.has_embroidery)
@@ -98,6 +104,7 @@ export const useOrderDraftStore = create<OrderDraftState>()(
           return {
             product_type: item.product_type.value ?? 'scrubs',
             quantity: item.quantity.value ?? 1,
+            gender: item.gender.value ?? 'unisex',
             color: item.color.value ?? '',
             piping_color: item.piping_color.value ?? '',
             has_embroidery: item.has_embroidery.value ?? false,

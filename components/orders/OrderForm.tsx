@@ -13,6 +13,7 @@ import { MeasurementForm } from '@/components/measurements/MeasurementForm'
 interface OrderItem {
   product_type: string
   quantity: number
+  gender: 'male' | 'female' | 'unisex'
   color: string
   piping_color: string
   has_embroidery: boolean
@@ -25,6 +26,7 @@ interface OrderItem {
 const defaultItem = (): OrderItem => ({
   product_type: 'scrubs',
   quantity: 1,
+  gender: 'unisex',
   color: '',
   piping_color: '',
   has_embroidery: false,
@@ -86,6 +88,7 @@ export function OrderForm({ prefillCustomer }: { prefillCustomer?: Customer }) {
         items: items.map(item => ({
           product_type: item.product_type,
           quantity: item.quantity,
+          gender: item.gender,
           color: item.color || null,
           piping_color: item.piping_color || null,
           has_embroidery: item.has_embroidery,
@@ -238,6 +241,21 @@ export function OrderForm({ prefillCustomer }: { prefillCustomer?: Customer }) {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={item.gender}
+                    onChange={e => updateItem(i, 'gender', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="unisex">Unisex</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     Quantity <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -385,6 +403,7 @@ export function OrderForm({ prefillCustomer }: { prefillCustomer?: Customer }) {
                         {PRODUCT_TYPES.find(p => p.value === item.product_type)?.label}
                       </span>
                       {' '}&times; {item.quantity}
+                      <span className="text-slate-500"> · {item.gender === 'male' ? 'Male' : item.gender === 'female' ? 'Female' : 'Unisex'}</span>
                       {item.color && <span className="text-slate-500"> · {item.color}</span>}
                       {item.has_embroidery && (
                         <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">

@@ -16,7 +16,14 @@
       "Bash(git -C \"c:\\\\Users\\\\Midas\\\\Desktop\\\\uniform-production-management-system\" add \"app/\\(admin\\)/assignments/page.tsx\")",
       "Bash(Find all *)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\\\\app\\\\\\(admin\\)\\\\orders\\\\[orderId]\\\\edit\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"done\")",
+      "Bash(mkdir -p \"c:/Users/dell/Desktop/uniform-production-management-system/app/\\(admin\\)/orders/[orderId]/edit\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\dell\\Desktop\\uniform-production-management-system\\app\\(admin)\\orders\\[orderId]"
     ]
   }
 }

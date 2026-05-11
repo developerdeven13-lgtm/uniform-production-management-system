@@ -28,6 +28,7 @@ export const ExtractedMeasurementsSchema = z.object({
 export const ExtractedItemSchema = z.object({
   product_type: confident(z.enum(['scrubs', 'apron', 'head_cap', 'card_holder'])),
   quantity: confidentNumber,
+  gender: confident(z.enum(['male', 'female', 'unisex'])),
   color: confidentString,
   piping_color: confidentString,
   has_embroidery: confidentBoolean,
@@ -71,6 +72,7 @@ export function getAmbiguousFields(fields: ExtractedOrderFields): string[] {
   fields.items.forEach((item, i) => {
     if (isAmbiguous(item.product_type)) ambiguous.push(`items.${i}.product_type`)
     if (isAmbiguous(item.quantity)) ambiguous.push(`items.${i}.quantity`)
+    if (isAmbiguous(item.gender)) ambiguous.push(`items.${i}.gender`)
     if (isAmbiguous(item.color)) ambiguous.push(`items.${i}.color`)
     if (isAmbiguous(item.has_embroidery)) ambiguous.push(`items.${i}.has_embroidery`)
     if (isAmbiguous(item.embroidery_name)) ambiguous.push(`items.${i}.embroidery_name`)

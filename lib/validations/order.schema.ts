@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const OrderItemSchema = z.object({
   product_type: z.enum(['scrubs', 'apron', 'head_cap', 'card_holder']),
   quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1').max(100),
+  gender: z.enum(['male', 'female', 'unisex']).default('unisex'),
   color: z.string().max(50).optional().nullable(),
   piping_color: z.string().max(50).optional().nullable(),
   has_embroidery: z.coerce.boolean().default(false),

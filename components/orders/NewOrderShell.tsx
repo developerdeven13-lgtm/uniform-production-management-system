@@ -68,7 +68,7 @@ export function NewOrderShell({ prefillCustomer, initialMode }: NewOrderShellPro
             <VoiceIntakePanel onExtracted={() => setAiStep('review')} />
           </div>
         ) : (
-          <TranscriptReviewForm onReset={() => setAiStep('record')} />
+          <TranscriptReviewForm onReset={() => setAiStep('record')} prefillCustomer={prefillCustomer} />
         )}
       </div>
     </div>

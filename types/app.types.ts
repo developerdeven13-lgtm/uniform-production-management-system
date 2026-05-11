@@ -86,6 +86,7 @@ export interface OrderItem {
   sequence_number: number
   product_type: ProductType
   quantity: number
+  gender: 'male' | 'female' | 'unisex' | null
   color: string | null
   piping_color: string | null
   design_config: Record<string, unknown>

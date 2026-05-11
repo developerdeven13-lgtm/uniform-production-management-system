@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ChevronDown, ChevronUp, Loader2, RotateCcw, FileText, UserPlus, X } from 'lucide-react'
@@ -14,14 +14,15 @@ import type { Customer } from '@/types/app.types'
 import { CustomerSearchCombobox } from '@/components/customers/CustomerSearchCombobox'
 
 interface TranscriptReviewFormProps {
-  onReset: () => void  // go back to voice panel
+  onReset: () => void
+  prefillCustomer?: Customer
 }
 
-export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
+export function TranscriptReviewForm({ onReset, prefillCustomer }: TranscriptReviewFormProps) {
   const router = useRouter()
   const store = useOrderDraftStore()
   const [submitting, setSubmitting] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(prefillCustomer ?? null)
   const [showTranscript, setShowTranscript] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
   const [quickCreateForm, setQuickCreateForm] = useState({ full_name: '', phone: '', organization: '' })
@@ -32,9 +33,15 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
     deliveryDate, specialInstructions, items,
     hasAiData, aiTranscript, overallConfidence,
     ambiguousFields, confirmedFields,
-    confirmField, confirmAllAmbiguous, updateItem,
+    confirmField, confirmAllAmbiguous, updateItem, setDeliveryDate,
     allAmbiguousConfirmed, clearDraft,
   } = store
+
+  useEffect(() => {
+    if (prefillCustomer && !selectedCustomer) {
+      setSelectedCustomer(prefillCustomer)
+    }
+  }, [prefillCustomer])
 
   const confirmedCount = ambiguousFields.filter(f => confirmedFields.has(f)).length
 
@@ -98,6 +105,7 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
         items: items.map(item => ({
           product_type: item.product_type,
           quantity: item.quantity,
+          gender: item.gender,
           color: item.color || null,
           piping_color: item.piping_color || null,
           has_embroidery: item.has_embroidery,
@@ -299,12 +307,14 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
                 onConfirm={() => confirmField('delivery_date')}
               >
                 <input type="date" value={deliveryDate}
-                  onChange={e => store.updateItem(0, {})}
+                  onChange={e => setDeliveryDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
                   className={inputCls} />
               </AIFieldHighlight>
             ) : (
               <input type="date" value={deliveryDate}
-                onChange={e => { /* handled in local state below */ }}
+                onChange={e => setDeliveryDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
                 className={inputCls} />
             )}
           </div>
@@ -340,6 +350,26 @@ export function TranscriptReviewForm({ onReset }: TranscriptReviewFormProps) {
                   {PRODUCT_TYPES.map(p => (
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
+                </select>
+              </AIFieldHighlight>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Gender</label>
+              <AIFieldHighlight
+                fieldPath={`items.${i}.gender`}
+                confidence={getItemAiConfidence(i, 'gender')}
+                isConfirmed={isConfirmed(`items.${i}.gender`)}
+                onConfirm={() => confirmField(`items.${i}.gender`)}
+              >
+                <select
+                  value={item.gender}
+                  onChange={e => updateItem(i, { gender: e.target.value as 'male' | 'female' | 'unisex' })}
+                  className={inputCls}
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="unisex">Unisex</option>
                 </select>
               </AIFieldHighlight>
             </div>

@@ -13,8 +13,9 @@ export default async function MyTasksPage() {
       order_item:order_items(
         *,
         order:orders(
-          id, order_number, status, delivery_date, priority,
-          customer:customers(full_name, phone)
+          id, order_number, status, delivery_date, priority, special_instructions,
+          customer:customers(full_name, phone),
+          media:media_attachments(*)
         ),
         measurements:order_measurements(*),
         media:media_attachments(*)
