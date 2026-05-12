@@ -14,7 +14,19 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      style={{
+        width: '100%',
+        padding: '10px 16px',
+        background: pending ? '#5F5E5A' : '#0f2416',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 9,
+        fontSize: 13,
+        fontWeight: 500,
+        cursor: pending ? 'not-allowed' : 'pointer',
+        transition: 'background 0.15s',
+        marginTop: 4,
+      }}
     >
       {pending ? 'Signing in…' : 'Sign in'}
     </button>
@@ -24,54 +36,70 @@ function SubmitButton() {
 export function LoginForm() {
   const [state, action] = useActionState(login, initialState)
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    border: '0.5px solid #D3D1C7',
+    borderRadius: 9,
+    fontSize: 13,
+    color: '#2C2C2A',
+    background: '#F7F5EE',
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: 11,
+    fontWeight: 500,
+    color: '#5F5E5A',
+    marginBottom: 5,
+  }
+
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {!state.success && !state.fieldErrors && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div style={{ borderRadius: 9, background: '#FCEBEB', border: '0.5px solid #F7C1C1', padding: '10px 14px', fontSize: 12, color: '#791F1F' }}>
           {state.error}
         </div>
       )}
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-          Email address
-        </label>
+        <label htmlFor="email" style={labelStyle}>Email address</label>
         <input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           required
-          className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+          style={inputStyle}
           placeholder="you@hospital.com"
         />
         {!state.success && state.fieldErrors?.['email'] && (
-          <p className="mt-1 text-xs text-red-600">{state.fieldErrors['email']?.[0]}</p>
+          <p style={{ marginTop: 4, fontSize: 11, color: '#791F1F' }}>{state.fieldErrors['email']?.[0]}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-          Password
-        </label>
+        <label htmlFor="password" style={labelStyle}>Password</label>
         <input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
           required
-          className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+          style={inputStyle}
           placeholder="••••••••"
         />
         {!state.success && state.fieldErrors?.['password'] && (
-          <p className="mt-1 text-xs text-red-600">{state.fieldErrors['password']?.[0]}</p>
+          <p style={{ marginTop: 4, fontSize: 11, color: '#791F1F' }}>{state.fieldErrors['password']?.[0]}</p>
         )}
       </div>
 
-      <div className="flex items-center justify-end">
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Link
           href="/reset-password"
-          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+          style={{ fontSize: 11, color: '#0f2416', fontWeight: 500, textDecoration: 'none' }}
         >
           Forgot password?
         </Link>

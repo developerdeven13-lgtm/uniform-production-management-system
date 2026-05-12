@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, ClipboardList, UserCheck,
-  Scissors, Layers, BarChart2, Settings, X, Stethoscope,
+  Scissors, Layers, BarChart2, Settings, X, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { can } from '@/lib/permissions/can'
+import { logout } from '@/actions/auth'
 import type { UserRole } from '@/types/app.types'
 import type { Permission } from '@/lib/permissions/permissions'
 import type { ServerUser } from '@/lib/auth/server-session'
@@ -21,53 +22,17 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Customers', href: '/customers', icon: Users, permission: 'customers.read' },
+  { label: 'Orders', href: '/orders', icon: ClipboardList, permission: 'orders.read.all' },
+  { label: 'My Tasks', href: '/my-tasks', icon: Scissors, roles: ['tailor', 'tailor_master'] },
   {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Customers',
-    href: '/customers',
-    icon: Users,
-    permission: 'customers.read',
-  },
-  {
-    label: 'Orders',
-    href: '/orders',
-    icon: ClipboardList,
-    permission: 'orders.read.all',
-  },
-  {
-    label: 'My Tasks',
-    href: '/my-tasks',
-    icon: Scissors,
-    roles: ['tailor', 'tailor_master'],
-  },
-  {
-    label: 'Embroidery Queue',
-    href: '/queue',
-    icon: Layers,
+    label: 'Embroidery Queue', href: '/queue', icon: Layers,
     roles: ['embroidery_staff', 'tailor_master', 'super_admin', 'admin'],
   },
-  {
-    label: 'Assignments',
-    href: '/assignments',
-    icon: UserCheck,
-    permission: 'assignments.create',
-  },
-  {
-    label: 'Reports',
-    href: '/reports',
-    icon: BarChart2,
-    permission: 'analytics.read',
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    permission: 'settings.manage',
-  },
+  { label: 'Assignments', href: '/assignments', icon: UserCheck, permission: 'assignments.create' },
+  { label: 'Reports', href: '/reports', icon: BarChart2, permission: 'analytics.read' },
+  { label: 'Settings', href: '/settings', icon: Settings, permission: 'settings.manage' },
 ]
 
 interface SidebarProps {
@@ -85,39 +50,39 @@ export function Sidebar({ profile, onClose }: SidebarProps) {
     return true
   })
 
+  const initials = profile.full_name
+    .split(' ')
+    .slice(0, 2)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+
   return (
-    <div className="flex flex-col h-full w-64" style={{ background: '#0f2e1e' }}>
+    <div className="flex flex-col h-full w-52" style={{ background: '#0f2416' }}>
       {/* Logo */}
-      <div className="flex items-center justify-between h-16 px-5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(52,211,153,0.18)' }}>
-            <Stethoscope className="w-5 h-5" style={{ color: '#34d399' }} />
-          </div>
-          <div className="leading-tight">
-            <p className="text-white font-semibold text-sm">Midas Health</p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Uniform Production</p>
-          </div>
+      <div
+        className="flex items-center justify-between px-[18px] py-5 shrink-0"
+        style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}
+      >
+        <div>
+          <p className="text-white font-bold text-[22px] leading-none tracking-tight">Midas</p>
+          <p className="text-[9px] font-medium uppercase tracking-[0.12em] mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Uniform Production
+          </p>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg transition-colors"
-            style={{ color: 'rgba(255,255,255,0.5)' }}
+            className="lg:hidden p-1.5 rounded-lg"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
           >
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Section label */}
-      <div className="px-5 pt-5 pb-2">
-        <p className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Menu
-        </p>
-      </div>
-
       {/* Nav */}
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 pt-4 space-y-0.5 overflow-y-auto">
         {visibleItems.map(item => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
@@ -125,42 +90,48 @@ export function Sidebar({ profile, onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+              className="flex items-center gap-[9px] px-[10px] py-[9px] rounded-[9px] text-xs font-medium transition-all"
+              style={
                 isActive
-                  ? 'text-white'
-                  : 'hover:text-white'
-              )}
-              style={isActive
-                ? { background: 'rgba(52,211,153,0.15)', color: '#34d399' }
-                : { color: 'rgba(255,255,255,0.55)' }
+                  ? { background: 'rgba(255,255,255,0.10)', color: '#fff' }
+                  : { color: 'rgba(255,255,255,0.45)' }
               }
             >
-              <item.icon className={cn('w-4 h-4 shrink-0', isActive ? '' : 'opacity-70')} />
+              <item.icon className="w-[15px] h-[15px] shrink-0" />
               {item.label}
               {isActive && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: '#34d399' }} />
+                <div className="ml-auto w-[5px] h-[5px] rounded-full shrink-0" style={{ background: '#34d399' }} />
               )}
             </Link>
           )
         })}
       </nav>
 
-      {/* User info — renders immediately from server-provided profile */}
-      <div className="px-3 py-4 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      {/* User + logout */}
+      <div className="px-3 pb-4 pt-3 shrink-0" style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex items-center gap-[9px] px-3 py-[9px] rounded-[9px]" style={{ background: 'rgba(255,255,255,0.06)' }}>
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-            style={{ background: '#34d399', color: '#0f2e1e' }}
+            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
+            style={{ background: '#34d399', color: '#0f2416' }}
           >
-            {profile.full_name.charAt(0).toUpperCase()}
+            {initials}
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{profile.full_name}</p>
-            <p className="text-xs capitalize truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-white truncate">{profile.full_name}</p>
+            <p className="text-[9px] capitalize truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
               {profile.role.replace(/_/g, ' ')}
             </p>
           </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              title="Sign out"
+              className="p-1 rounded transition-colors"
+              style={{ color: 'rgba(255,255,255,0.25)' }}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </form>
         </div>
       </div>
     </div>

@@ -7,7 +7,6 @@ export default async function EmbroideryQueuePage() {
   await requireUser()
   const supabase = await createClient()
 
-  // Get available embroidery staff for admin assignment
   const { data: embroideryStaff } = await supabase
     .from('profiles')
     .select('*')
@@ -19,10 +18,14 @@ export default async function EmbroideryQueuePage() {
   const queue = queueResult.success ? queueResult.data : []
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Embroidery Queue</h1>
-        <p className="text-sm text-slate-500 mt-0.5">{queue.length} item{queue.length !== 1 ? 's' : ''} pending</p>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2416', letterSpacing: '-0.5px', lineHeight: 1 }}>
+          Embroidery Queue
+        </h1>
+        <p style={{ fontSize: 11, color: '#888780', marginTop: 4 }}>
+          {queue.length} item{queue.length !== 1 ? 's' : ''} pending
+        </p>
       </div>
 
       <EmbroideryQueueList

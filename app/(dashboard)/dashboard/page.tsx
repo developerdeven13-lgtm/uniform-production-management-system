@@ -1,208 +1,359 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
-import { ClipboardList, Users, Clock, CheckCircle, ArrowUpRight, TrendingUp } from 'lucide-react'
+import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
+import { formatDate } from '@/lib/utils/format-date'
+import type { OrderStatus } from '@/types/app.types'
+
+const PIPELINE_ROWS = [
+  { status: 'draft',         label: 'Draft',        color: '#B4B2A9' },
+  { status: 'confirmed',     label: 'Confirmed',    color: '#85B7EB' },
+  { status: 'assigned',      label: 'Assigned',     color: '#AFA9EC' },
+  { status: 'in_tailoring',  label: 'In Tailoring', color: '#EF9F27' },
+  { status: 'in_embroidery', label: 'Embroidery',   color: '#AFA9EC' },
+  { status: 'quality_check', label: 'QC',           color: '#ED93B1' },
+  { status: 'ready',         label: 'Ready',        color: '#5DCAA5' },
+  { status: 'delivered',     label: 'Delivered',    color: '#1D9E75' },
+]
 
 export default async function DashboardPage() {
   await requireUser()
   const supabase = await createClient()
 
-  const [ordersResult, customersResult] = await Promise.all([
+  const [ordersResult, customersResult, recentResult] = await Promise.all([
     supabase.from('orders').select('status, priority', { count: 'exact' }),
     supabase.from('customers').select('id', { count: 'exact' }),
+    supabase
+      .from('orders')
+      .select('id, order_number, status, priority, delivery_date, customer:customers(full_name)')
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
   const totalOrders = ordersResult.count ?? 0
   const totalCustomers = customersResult.count ?? 0
-
   const orders = ordersResult.data ?? []
-  const inProgress = orders.filter(o =>
+  const recentOrders = recentResult.data ?? []
+
+  const inProduction = orders.filter(o =>
     ['assigned', 'in_tailoring', 'in_embroidery', 'quality_check'].includes(o.status)
   ).length
-  const completed = orders.filter(o => o.status === 'delivered').length
-  const urgentCount = orders.filter(o => o.priority === 1).length
+  const delivered = orders.filter(o => o.status === 'delivered').length
+  const urgent = orders.filter(o => o.priority === 1).length
+  const completionRate = totalOrders > 0 ? Math.round((delivered / totalOrders) * 100) : 0
 
-  const STATUS_ROWS = [
-    { status: 'draft', label: 'Draft', color: '#94a3b8' },
-    { status: 'confirmed', label: 'Confirmed', color: '#60a5fa' },
-    { status: 'assigned', label: 'Assigned', color: '#a78bfa' },
-    { status: 'in_tailoring', label: 'In Tailoring', color: '#fbbf24' },
-    { status: 'in_embroidery', label: 'In Embroidery', color: '#fb923c' },
-    { status: 'quality_check', label: 'Quality Check', color: '#f472b6' },
-    { status: 'ready', label: 'Ready', color: '#34d399' },
-    { status: 'delivered', label: 'Delivered', color: '#10b981' },
-    { status: 'cancelled', label: 'Cancelled', color: '#f87171' },
-  ]
+  const maxPipelineCount = Math.max(
+    1,
+    ...PIPELINE_ROWS.map(r => orders.filter(o => o.status === r.status).length)
+  )
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Plan, prioritize, and track your production with ease.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/orders/new"
-            className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow-sm transition-opacity hover:opacity-90"
-            style={{ background: '#0f2e1e' }}
+    <div className="max-w-6xl">
+      {/* Hero stat */}
+      <div className="mb-0">
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 96,
+              fontWeight: 700,
+              lineHeight: 0.9,
+              color: '#0f2416',
+              letterSpacing: '-4px',
+              fontFamily: 'Inter, system-ui, sans-serif',
+            }}
           >
-            + New Order
-          </Link>
-          <Link
-            href="/orders"
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
-          >
-            View All Orders
-          </Link>
+            {totalOrders}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 10 }}>
+            <span style={{ fontSize: 11, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 500 }}>
+              Total orders
+            </span>
+            <span style={{ fontSize: 28, fontWeight: 700, color: '#2C2C2A', letterSpacing: '-1px', lineHeight: 1, marginTop: 2 }}>
+              production<br />this year
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Orders – hero card */}
-        <Link
-          href="/orders"
-          className="rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden group transition-opacity hover:opacity-95"
-          style={{ background: '#0f2e1e' }}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>Total Orders</p>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(52,211,153,0.15)' }}>
-              <ArrowUpRight className="w-4 h-4" style={{ color: '#34d399' }} />
-            </div>
-          </div>
-          <p className="text-4xl font-bold text-white">{totalOrders}</p>
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: '#34d399' }}>
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>All time production orders</span>
-          </div>
-        </Link>
+      {/* Divider */}
+      <div style={{ height: '0.5px', background: '#D3D1C7', margin: '16px 0' }} />
 
-        {/* Total Customers */}
-        <Link
-          href="/customers"
-          className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-md hover:border-slate-300 transition-all group"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">Total Customers</p>
-            <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4 text-purple-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
-          </div>
-          <p className="text-4xl font-bold text-slate-900">{totalCustomers}</p>
-          <div className="flex items-center gap-1.5 text-xs text-purple-500">
-            <Users className="w-3.5 h-3.5" />
-            <span>Registered customers</span>
-          </div>
-        </Link>
-
-        {/* In Production */}
-        <Link
-          href="/orders?status=in_tailoring"
-          className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-md hover:border-slate-300 transition-all group"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">In Production</p>
-            <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4 text-amber-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
-          </div>
-          <p className="text-4xl font-bold text-slate-900">{inProgress}</p>
-          <div className="flex items-center gap-1.5 text-xs text-amber-500">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Active in workflow</span>
-          </div>
-        </Link>
-
-        {/* Delivered */}
+      {/* KPI strip */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          borderBottom: '0.5px solid #D3D1C7',
+          marginBottom: 24,
+        }}
+      >
         <Link
           href="/orders?status=delivered"
-          className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-md hover:border-slate-300 transition-all group"
+          style={{ padding: '16px 0', borderRight: '0.5px solid #D3D1C7', textDecoration: 'none' }}
         >
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">Delivered</p>
-            <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
+          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1, color: '#0F6E56' }}>
+            {delivered}
           </div>
-          <p className="text-4xl font-bold text-slate-900">{completed}</p>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-500">
-            <CheckCircle className="w-3.5 h-3.5" />
-            <span>Orders completed</span>
+          <div style={{ fontSize: 10, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+            Delivered
+          </div>
+          <div style={{ fontSize: 10, color: '#0F6E56', marginTop: 2 }}>↑ {completionRate}% rate</div>
+        </Link>
+        <Link
+          href="/orders?status=in_tailoring"
+          style={{ padding: '16px 0 16px 16px', borderRight: '0.5px solid #D3D1C7', textDecoration: 'none' }}
+        >
+          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1, color: '#854F0B' }}>
+            {inProduction}
+          </div>
+          <div style={{ fontSize: 10, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+            In production
+          </div>
+          <div style={{ fontSize: 10, color: '#888780', marginTop: 2 }}>Active now</div>
+        </Link>
+        <Link
+          href="/orders?priority=urgent"
+          style={{ padding: '16px 0 16px 16px', textDecoration: 'none' }}
+        >
+          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1, color: urgent > 0 ? '#A32D2D' : '#2C2C2A' }}>
+            {urgent}
+          </div>
+          <div style={{ fontSize: 10, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+            Urgent
+          </div>
+          <div style={{ fontSize: 10, color: urgent > 0 ? '#A32D2D' : '#888780', marginTop: 2 }}>
+            {urgent > 0 ? 'Need attention' : 'All clear'}
           </div>
         </Link>
       </div>
 
-      {/* Bottom row: status breakdown + quick stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Status breakdown */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-semibold text-slate-900">Production Analytics</h2>
-            <Link href="/orders" className="text-xs font-medium hover:underline" style={{ color: '#0f2e1e' }}>
-              View all →
-            </Link>
+      {/* Two-column body */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, alignItems: 'start' }}>
+        {/* Left: recent orders + pipeline */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Recent orders */}
+          <div
+            style={{
+              background: '#fff',
+              border: '0.5px solid #D3D1C7',
+              borderRadius: 14,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 18px',
+                borderBottom: '0.5px solid #F1EFE8',
+              }}
+            >
+              <span style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888780' }}>
+                Recent orders
+              </span>
+              <Link href="/orders" style={{ fontSize: 11, color: '#0F6E56', textDecoration: 'none' }}>
+                View all →
+              </Link>
+            </div>
+
+            {recentOrders.length === 0 ? (
+              <div style={{ padding: '32px 18px', textAlign: 'center', color: '#888780', fontSize: 12 }}>
+                No orders yet.{' '}
+                <Link href="/orders/new" style={{ color: '#0f2416', fontWeight: 500 }}>Create one →</Link>
+              </div>
+            ) : (
+              recentOrders.map((order, idx) => {
+                const customer = Array.isArray(order.customer) ? order.customer[0] as { full_name: string } | undefined : order.customer as { full_name: string } | null
+                return (
+                  <Link
+                    key={order.id}
+                    href={`/orders/${order.id}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto auto',
+                      alignItems: 'center',
+                      padding: '11px 18px',
+                      borderBottom: idx < recentOrders.length - 1 ? '0.5px solid #F1EFE8' : 'none',
+                      textDecoration: 'none',
+                      transition: 'background 0.1s',
+                      gap: 10,
+                    }}
+                    className="hover:bg-[#F7F5EE]"
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2C2C2A', letterSpacing: '-0.3px' }}>
+                        {order.order_number}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#888780', marginTop: 1 }}>
+                        {customer?.full_name ?? '—'}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {order.priority === 1 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#2C2C2A', color: '#F1EFE8' }}>
+                          Urgent
+                        </span>
+                      )}
+                      <OrderStatusBadge status={order.status as OrderStatus} />
+                    </div>
+                    <div style={{ fontSize: 11, color: '#888780', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {order.delivery_date ? `Due ${formatDate(order.delivery_date)}` : '—'}
+                    </div>
+                  </Link>
+                )
+              })
+            )}
           </div>
-          <div className="space-y-3">
-            {STATUS_ROWS.map(({ status, label, color }) => {
-              const count = orders.filter(o => o.status === status).length
-              const pct = totalOrders > 0 ? Math.round((count / totalOrders) * 100) : 0
-              return (
-                <div key={status} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500 w-28 shrink-0">{label}</span>
-                  <div className="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="h-2.5 rounded-full transition-all"
-                      style={{ width: `${pct}%`, background: color }}
-                    />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 w-6 text-right">{count}</span>
-                </div>
-              )
-            })}
+
+          {/* Pipeline breakdown */}
+          <div
+            style={{
+              background: '#fff',
+              border: '0.5px solid #D3D1C7',
+              borderRadius: 14,
+              padding: '14px 18px',
+            }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888780', marginBottom: 14 }}>
+              Pipeline breakdown
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {PIPELINE_ROWS.map(({ status, label, color }) => {
+                const count = orders.filter(o => o.status === status).length
+                const pct = count > 0 ? Math.round((count / maxPipelineCount) * 100) : 0
+                return (
+                  <Link
+                    key={status}
+                    href={`/orders?status=${status}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
+                  >
+                    <span style={{ fontSize: 10, color: '#5F5E5A', width: 80, flexShrink: 0 }}>{label}</span>
+                    <div style={{ flex: 1, height: 5, background: '#D3D1C7', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 2, background: color, width: `${pct}%`, transition: 'width 0.3s' }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#2C2C2A', width: 18, textAlign: 'right', flexShrink: 0 }}>{count}</span>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Quick stats panel */}
-        <div className="flex flex-col gap-4">
-          {/* Urgent orders alert */}
-          <Link
-            href="/orders?priority=urgent"
-            className="bg-white rounded-2xl border p-5 flex flex-col gap-2 hover:shadow-md transition-all group"
-            style={{ borderColor: urgentCount > 0 ? '#fca5a5' : '#e2e8f0' }}
+        {/* Right: stats panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div
+            style={{
+              background: '#fff',
+              border: '0.5px solid #D3D1C7',
+              borderRadius: 14,
+              padding: '18px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0,
+            }}
           >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-500">Urgent Orders</p>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#fee2e2', color: '#dc2626' }}>
-                Priority
-              </span>
+            {/* Completion */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 9, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+                Completion
+              </div>
+              <div style={{ fontSize: 48, fontWeight: 700, letterSpacing: '-2px', color: '#2C2C2A', lineHeight: 1 }}>
+                {completionRate}<span style={{ fontSize: 28, color: '#888780', fontWeight: 500 }}>%</span>
+              </div>
+              <div style={{ fontSize: 10, color: '#888780', marginTop: 4 }}>
+                {delivered} of {totalOrders} delivered
+              </div>
+              <div style={{ height: 4, background: '#F1EFE8', borderRadius: 2, marginTop: 10, overflow: 'hidden' }}>
+                <div style={{ width: `${completionRate}%`, height: '100%', background: '#1D9E75', borderRadius: 2 }} />
+              </div>
             </div>
-            <p className="text-3xl font-bold" style={{ color: urgentCount > 0 ? '#dc2626' : '#1e293b' }}>
-              {urgentCount}
-            </p>
-            <p className="text-xs text-slate-400">
-              {urgentCount > 0 ? 'Require immediate attention' : 'No urgent orders right now'}
-            </p>
-          </Link>
 
-          {/* Completion rate */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-2">
-            <p className="text-sm font-medium text-slate-500">Completion Rate</p>
-            <p className="text-3xl font-bold text-slate-900">
-              {totalOrders > 0 ? Math.round((completed / totalOrders) * 100) : 0}%
-            </p>
-            <div className="w-full bg-slate-100 rounded-full h-2 mt-1">
-              <div
-                className="h-2 rounded-full transition-all"
+            <div style={{ height: '0.5px', background: '#F1EFE8', margin: '4px 0 16px' }} />
+
+            {/* Urgent */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 9, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+                Urgent
+              </div>
+              <Link
+                href="/orders?priority=urgent"
                 style={{
-                  width: `${totalOrders > 0 ? Math.round((completed / totalOrders) * 100) : 0}%`,
-                  background: '#10b981',
+                  display: 'block',
+                  background: urgent > 0 ? '#FCEBEB' : '#F1EFE8',
+                  border: `0.5px solid ${urgent > 0 ? '#F7C1C1' : '#D3D1C7'}`,
+                  borderRadius: 10,
+                  padding: '12px',
+                  textDecoration: 'none',
                 }}
-              />
+              >
+                <div style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-2px', color: urgent > 0 ? '#791F1F' : '#2C2C2A', lineHeight: 1 }}>
+                  {urgent}
+                </div>
+                <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: urgent > 0 ? '#A32D2D' : '#888780', marginTop: 3, fontWeight: 500 }}>
+                  {urgent > 0 ? 'Need attention now' : 'No urgent orders'}
+                </div>
+              </Link>
             </div>
-            <p className="text-xs text-slate-400">{completed} of {totalOrders} orders delivered</p>
+
+            <div style={{ height: '0.5px', background: '#F1EFE8', margin: '4px 0 16px' }} />
+
+            {/* Customers */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 9, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
+                Customers
+              </div>
+              <div style={{ fontSize: 40, fontWeight: 700, color: '#2C2C2A', letterSpacing: '-1.5px', lineHeight: 1 }}>
+                {totalCustomers}
+              </div>
+              <div style={{ fontSize: 10, color: '#888780', marginTop: 4 }}>Registered clients</div>
+            </div>
+
+            <div style={{ height: '0.5px', background: '#F1EFE8', margin: '4px 0 16px' }} />
+
+            {/* Quick actions */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+                Quick actions
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <Link
+                  href="/orders/new"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px 14px',
+                    background: '#0f2416',
+                    color: '#fff',
+                    borderRadius: 9,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                  }}
+                >
+                  + New Order
+                </Link>
+                <Link
+                  href="/customers/new"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px 14px',
+                    background: '#F1EFE8',
+                    color: '#2C2C2A',
+                    border: '0.5px solid #D3D1C7',
+                    borderRadius: 9,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                  }}
+                >
+                  + New Customer
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

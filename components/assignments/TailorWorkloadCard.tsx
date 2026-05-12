@@ -1,6 +1,5 @@
 import type { Profile } from '@/types/app.types'
 import { ROLE_LABELS } from '@/lib/permissions/roles'
-import { cn } from '@/lib/utils/cn'
 
 interface TailorWorkloadCardProps {
   tailor: Profile
@@ -18,46 +17,65 @@ export function TailorWorkloadCard({
   onClick,
 }: TailorWorkloadCardProps) {
   const load = activeCount === 0 ? 'free' : activeCount <= 3 ? 'moderate' : 'busy'
-  const loadColor = {
-    free: 'text-green-600 bg-green-50 border-green-200',
-    moderate: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    busy: 'text-red-600 bg-red-50 border-red-200',
+  const loadStyle = {
+    free:     { background: '#E1F5EE', color: '#085041' },
+    moderate: { background: '#FAEEDA', color: '#633806' },
+    busy:     { background: '#FCEBEB', color: '#791F1F' },
+  }[load]
+  const dotColor = {
+    free: '#1D9E75',
+    moderate: '#EF9F27',
+    busy: '#E24B4A',
   }[load]
   const loadLabel = { free: 'Available', moderate: 'Moderate', busy: 'Busy' }[load]
+
+  const initials = tailor.full_name
+    .split(' ')
+    .slice(0, 2)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        'w-full text-left p-4 rounded-xl border-2 transition-all',
-        selected
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'
-      )}
+      style={{
+        width: '100%',
+        textAlign: 'left',
+        padding: '14px',
+        borderRadius: 12,
+        border: selected ? '1.5px solid #0f2416' : '0.5px solid #D3D1C7',
+        background: selected ? '#F1EFE8' : '#fff',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.1s',
+      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center shrink-0 text-sm font-bold text-slate-600">
-            {tailor.full_name.charAt(0).toUpperCase()}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', flexShrink: 0 }}>
+            {initials}
           </div>
           <div>
-            <p className="font-medium text-slate-900 text-sm">{tailor.full_name}</p>
-            <p className="text-xs text-slate-500">{ROLE_LABELS[tailor.role]}</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#2C2C2A' }}>{tailor.full_name}</p>
+            <p style={{ fontSize: 10, color: '#888780' }}>{ROLE_LABELS[tailor.role]}</p>
           </div>
         </div>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${loadColor}`}>
-          {loadLabel}
-        </span>
-      </div>
-      <div className="flex gap-4 mt-3">
-        <div className="text-center">
-          <p className="text-lg font-bold text-slate-900">{activeCount}</p>
-          <p className="text-xs text-slate-500">Active</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+          <span style={{ fontSize: 9, fontWeight: 500, padding: '3px 8px', borderRadius: 99, ...loadStyle }}>
+            {loadLabel}
+          </span>
         </div>
-        <div className="text-center">
-          <p className="text-lg font-bold text-slate-400">{completedCount}</p>
-          <p className="text-xs text-slate-500">Done</p>
+      </div>
+      <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
+        <div>
+          <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', color: '#2C2C2A', lineHeight: 1 }}>{activeCount}</p>
+          <p style={{ fontSize: 10, color: '#888780', marginTop: 2 }}>Active</p>
+        </div>
+        <div>
+          <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', color: '#888780', lineHeight: 1 }}>{completedCount}</p>
+          <p style={{ fontSize: 10, color: '#888780', marginTop: 2 }}>Done</p>
         </div>
       </div>
     </button>

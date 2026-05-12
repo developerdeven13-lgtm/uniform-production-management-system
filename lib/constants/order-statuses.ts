@@ -19,3 +19,16 @@ export const STATUS_LABEL: Record<OrderStatusValue, string> = Object.fromEntries
 export const STATUS_COLOR: Record<OrderStatusValue, string> = Object.fromEntries(
   ORDER_STATUSES.map(s => [s.value, s.color])
 ) as Record<OrderStatusValue, string>
+
+/* Editorial inline style tokens for warm-palette badges */
+export const STATUS_STYLE: Record<OrderStatusValue, { background: string; color: string }> = {
+  draft:         { background: '#F1EFE8', color: '#444441' },
+  confirmed:     { background: '#E6F1FB', color: '#0C447C' },
+  assigned:      { background: '#EEEDFE', color: '#3C3489' },
+  in_tailoring:  { background: '#FAEEDA', color: '#633806' },
+  in_embroidery: { background: '#EEEDFE', color: '#3C3489' },
+  quality_check: { background: '#FAEEDA', color: '#633806' },
+  ready:         { background: '#E1F5EE', color: '#085041' },
+  delivered:     { background: '#EAF3DE', color: '#27500A' },
+  cancelled:     { background: '#FCEBEB', color: '#791F1F' },
+}

@@ -42,26 +42,33 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+        className="relative p-2 rounded-lg transition-colors"
+        style={{ color: '#5F5E5A' }}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-4.5 h-4.5 w-[18px] h-[18px]" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span
+            className="absolute top-1 right-1 w-[14px] h-[14px] text-white text-[9px] font-bold rounded-full flex items-center justify-center"
+            style={{ background: '#E24B4A' }}
+          >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-900 text-sm">Notifications</h3>
+        <div
+          className="absolute right-0 top-full mt-2 w-80 z-50 overflow-hidden"
+          style={{ background: '#fff', border: '0.5px solid #D3D1C7', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '0.5px solid #F1EFE8' }}>
+            <h3 style={{ fontSize: 12, fontWeight: 600, color: '#2C2C2A' }}>Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="flex items-center gap-1"
+                style={{ fontSize: 11, color: '#0f2416', fontWeight: 500 }}
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all read
@@ -69,12 +76,11 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             )}
           </div>
 
-          {/* List */}
-          <div className="max-h-96 overflow-y-auto divide-y divide-slate-50">
+          <div className="max-h-96 overflow-y-auto" style={{ borderTop: 'none' }}>
             {notifications.length === 0 ? (
-              <div className="py-10 text-center">
-                <Bell className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                <p className="text-sm text-slate-400">No notifications yet</p>
+              <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                <Bell className="w-7 h-7 mx-auto mb-2" style={{ color: '#D3D1C7' }} />
+                <p style={{ fontSize: 12, color: '#888780' }}>No notifications yet</p>
               </div>
             ) : (
               notifications.map(n => (
@@ -101,25 +107,31 @@ function NotificationItem({
 }) {
   return (
     <div
-      className={cn(
-        'flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors',
-        !n.is_read && 'bg-blue-50/50'
-      )}
+      style={{
+        display: 'flex',
+        gap: 10,
+        padding: '10px 16px',
+        borderBottom: '0.5px solid #F1EFE8',
+        background: !n.is_read ? '#FAEEDA20' : 'transparent',
+        transition: 'background 0.1s',
+      }}
     >
-      <span className="text-lg shrink-0 mt-0.5">
+      <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
         {NOTIFICATION_ICONS[n.type] ?? '🔔'}
       </span>
-      <div className="flex-1 min-w-0">
-        <p className={cn('text-sm', !n.is_read ? 'font-medium text-slate-900' : 'text-slate-700')}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 12, fontWeight: n.is_read ? 400 : 600, color: '#2C2C2A' }}>
           {n.title}
         </p>
-        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.body}</p>
-        <p className="text-xs text-slate-400 mt-1">{formatRelativeTime(n.created_at)}</p>
+        <p style={{ fontSize: 11, color: '#5F5E5A', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {n.body}
+        </p>
+        <p style={{ fontSize: 10, color: '#888780', marginTop: 4 }}>{formatRelativeTime(n.created_at)}</p>
       </div>
       {!n.is_read && (
         <button
           onClick={() => onMarkRead(n.id)}
-          className="shrink-0 p-1 text-slate-400 hover:text-blue-600 rounded"
+          style={{ flexShrink: 0, padding: 4, color: '#888780', background: 'none', border: 'none', cursor: 'pointer' }}
           title="Mark as read"
         >
           <Check className="w-3.5 h-3.5" />

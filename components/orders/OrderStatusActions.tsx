@@ -14,15 +14,15 @@ interface OrderStatusActionsProps {
   userRole: string
 }
 
-const STATUS_BUTTON_STYLE: Partial<Record<OrderStatus, string>> = {
-  confirmed: 'bg-blue-600 hover:bg-blue-700 text-white',
-  assigned: 'bg-purple-600 hover:bg-purple-700 text-white',
-  in_tailoring: 'bg-yellow-500 hover:bg-yellow-600 text-white',
-  in_embroidery: 'bg-orange-500 hover:bg-orange-600 text-white',
-  quality_check: 'bg-pink-600 hover:bg-pink-700 text-white',
-  ready: 'bg-green-600 hover:bg-green-700 text-white',
-  delivered: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-  cancelled: 'bg-red-600 hover:bg-red-700 text-white',
+const STATUS_ACTION_STYLE: Partial<Record<OrderStatus, { background: string; color: string }>> = {
+  confirmed:     { background: '#E6F1FB', color: '#0C447C' },
+  assigned:      { background: '#EEEDFE', color: '#3C3489' },
+  in_tailoring:  { background: '#FAEEDA', color: '#633806' },
+  in_embroidery: { background: '#EEEDFE', color: '#3C3489' },
+  quality_check: { background: '#FAEEDA', color: '#633806' },
+  ready:         { background: '#E1F5EE', color: '#085041' },
+  delivered:     { background: '#EAF3DE', color: '#27500A' },
+  cancelled:     { background: '#FCEBEB', color: '#791F1F' },
 }
 
 export function OrderStatusActions({ order, userRole }: OrderStatusActionsProps) {
@@ -51,20 +51,24 @@ export function OrderStatusActions({ order, userRole }: OrderStatusActionsProps)
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <p className="text-xs text-slate-500 mr-1">Actions:</p>
-      {roleTransitions.map(toStatus => (
-        <button
-          key={toStatus}
-          onClick={() => advance(toStatus)}
-          disabled={loading !== null}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
-            STATUS_BUTTON_STYLE[toStatus] ?? 'bg-slate-600 hover:bg-slate-700 text-white'
-          }`}
-        >
-          {loading === toStatus && <Loader2 className="w-3 h-3 animate-spin" />}
-          → {STATUS_LABEL[toStatus]}
-        </button>
-      ))}
+      <span className="text-[10px] font-medium uppercase tracking-wider mr-1" style={{ color: '#888780' }}>
+        Move to
+      </span>
+      {roleTransitions.map(toStatus => {
+        const style = STATUS_ACTION_STYLE[toStatus] ?? { background: '#F1EFE8', color: '#444441' }
+        return (
+          <button
+            key={toStatus}
+            onClick={() => advance(toStatus)}
+            disabled={loading !== null}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-opacity disabled:opacity-50"
+            style={style}
+          >
+            {loading === toStatus && <Loader2 className="w-3 h-3 animate-spin" />}
+            {STATUS_LABEL[toStatus]}
+          </button>
+        )
+      })}
     </div>
   )
 }

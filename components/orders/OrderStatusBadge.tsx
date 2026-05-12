@@ -1,6 +1,5 @@
-import { STATUS_LABEL, STATUS_COLOR } from '@/lib/constants/order-statuses'
+import { STATUS_LABEL, STATUS_STYLE } from '@/lib/constants/order-statuses'
 import type { OrderStatus } from '@/types/app.types'
-import { cn } from '@/lib/utils/cn'
 
 interface OrderStatusBadgeProps {
   status: OrderStatus
@@ -8,13 +7,21 @@ interface OrderStatusBadgeProps {
 }
 
 export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
+  const style = STATUS_STYLE[status] ?? { background: '#F1EFE8', color: '#444441' }
   return (
     <span
-      className={cn(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-        STATUS_COLOR[status],
-        className
-      )}
+      className={className}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '3px 9px',
+        borderRadius: '99px',
+        fontSize: '10px',
+        fontWeight: 500,
+        letterSpacing: '0.01em',
+        whiteSpace: 'nowrap',
+        ...style,
+      }}
     >
       {STATUS_LABEL[status]}
     </span>

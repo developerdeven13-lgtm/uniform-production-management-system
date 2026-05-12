@@ -35,67 +35,99 @@ export default async function CustomersPage({
   const totalPages = Math.ceil(total / pageSize)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-5xl">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Customers</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{total} total</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2416', letterSpacing: '-0.5px', lineHeight: 1 }}>
+            Customers
+          </h1>
+          <p style={{ fontSize: 11, color: '#888780', marginTop: 4 }}>{total} total</p>
         </div>
         <Link
           href="/customers/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            background: '#0f2416',
+            color: '#fff',
+            borderRadius: 9,
+            fontSize: 12,
+            fontWeight: 500,
+            textDecoration: 'none',
+          }}
         >
-          <Plus className="w-4 h-4" />
-          New Customer
+          <Plus className="w-3.5 h-3.5" /> New Customer
         </Link>
       </div>
 
       {/* Search */}
       <form method="GET" className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#888780' }} />
         <input
           name="q"
           defaultValue={query}
           placeholder="Search by name, phone, email, or organization…"
-          className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-9 pr-4 py-2.5 text-xs focus:outline-none"
+          style={{ border: '0.5px solid #D3D1C7', borderRadius: 9, background: '#fff', color: '#2C2C2A' }}
         />
       </form>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div style={{ background: '#fff', border: '0.5px solid #D3D1C7', borderRadius: 14, overflow: 'hidden' }}>
         {!customers || customers.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-slate-500 text-sm">No customers found.</p>
-            <Link href="/customers/new" className="mt-3 inline-flex text-blue-600 text-sm font-medium hover:text-blue-700">
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: '#5F5E5A' }}>No customers found.</p>
+            <Link href="/customers/new" style={{ display: 'inline-block', marginTop: 12, fontSize: 12, fontWeight: 500, color: '#0f2416', textDecoration: 'none' }}>
               Add your first customer →
             </Link>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Phone</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Organization</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Added</th>
-                <th className="px-4 py-3" />
+              <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#F7F5EE' }}>
+                {['Name', 'Phone', 'Organization', 'Added', ''].map((h, i) => (
+                  <th
+                    key={i}
+                    className={i === 2 ? 'hidden sm:table-cell' : i === 3 ? 'hidden md:table-cell' : ''}
+                    style={{
+                      textAlign: i === 4 ? 'right' : 'left',
+                      padding: '10px 18px',
+                      fontSize: 9,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      color: '#888780',
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(customers as Customer[]).map(c => (
-                <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900">{c.full_name}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.phone}</td>
-                  <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">
+            <tbody>
+              {(customers as Customer[]).map((c, idx) => (
+                <tr
+                  key={c.id}
+                  style={{ borderBottom: idx < customers.length - 1 ? '0.5px solid #F1EFE8' : 'none' }}
+                  className="hover:bg-[#F7F5EE] transition-colors"
+                >
+                  <td style={{ padding: '12px 18px', fontSize: 13, fontWeight: 600, color: '#2C2C2A' }}>
+                    {c.full_name}
+                  </td>
+                  <td style={{ padding: '12px 18px', fontSize: 12, color: '#5F5E5A' }}>{c.phone}</td>
+                  <td className="hidden sm:table-cell" style={{ padding: '12px 18px', fontSize: 12, color: '#888780' }}>
                     {c.organization ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-slate-500 hidden md:table-cell">
+                  <td className="hidden md:table-cell" style={{ padding: '12px 18px', fontSize: 11, color: '#888780' }}>
                     {formatDate(c.created_at)}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td style={{ padding: '12px 18px', textAlign: 'right' }}>
                     <Link
                       href={`/customers/${c.id}`}
-                      className="text-blue-600 hover:text-blue-800 font-medium text-xs"
+                      style={{ fontSize: 11, fontWeight: 500, color: '#0f2416', textDecoration: 'none' }}
                     >
                       View →
                     </Link>
@@ -109,23 +141,23 @@ export default async function CustomersPage({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>Page {page} of {totalPages}</span>
-          <div className="flex gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, color: '#888780' }}>Page {page} of {totalPages}</span>
+          <div style={{ display: 'flex', gap: 8 }}>
             {page > 1 && (
               <Link
                 href={`/customers?page=${page - 1}${query ? `&q=${query}` : ''}`}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50"
+                style={{ padding: '6px 14px', fontSize: 11, fontWeight: 500, border: '0.5px solid #D3D1C7', borderRadius: 9, background: '#fff', color: '#2C2C2A', textDecoration: 'none' }}
               >
-                Previous
+                ← Previous
               </Link>
             )}
             {page < totalPages && (
               <Link
                 href={`/customers?page=${page + 1}${query ? `&q=${query}` : ''}`}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50"
+                style={{ padding: '6px 14px', fontSize: 11, fontWeight: 500, border: '0.5px solid #D3D1C7', borderRadius: 9, background: '#fff', color: '#2C2C2A', textDecoration: 'none' }}
               >
-                Next
+                Next →
               </Link>
             )}
           </div>

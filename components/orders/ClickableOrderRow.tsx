@@ -13,7 +13,10 @@ export function ClickableOrderRow({
   return (
     <tr
       onClick={() => router.push(`/orders/${orderId}`)}
-      className="hover:bg-slate-50/70 transition-colors group cursor-pointer"
+      className="cursor-pointer transition-colors"
+      style={{ borderBottom: '0.5px solid #F1EFE8' }}
+      onMouseEnter={e => (e.currentTarget.style.background = '#F7F5EE')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
     >
       {children}
     </tr>

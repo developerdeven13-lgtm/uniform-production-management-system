@@ -30,9 +30,9 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
       )}
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden" style={{ background: '#EDEBE4' }}>
         <TopBar onMenuClick={() => setSidebarOpen(true)} profile={profile} />
-        <main className={cn('flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6')}>
+        <main className={cn('flex-1 overflow-y-auto p-5 sm:p-7')}>
           {children}
         </main>
       </div>

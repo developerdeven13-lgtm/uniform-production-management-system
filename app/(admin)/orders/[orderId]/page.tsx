@@ -2,10 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth/server-session'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import {
-  ChevronRight, Calendar, User, Package,
-  Ruler, MessageSquare, Cpu, AlertTriangle, Clock, Paperclip, Pencil,
-} from 'lucide-react'
+import { ChevronRight, Cpu, Pencil, Ruler, User, Clock, Paperclip, MessageSquare } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper'
 import { OrderStatusActions } from '@/components/orders/OrderStatusActions'
@@ -14,6 +11,29 @@ import { getOrderMedia } from '@/actions/media'
 import { formatDate, formatDateTime } from '@/lib/utils/format-date'
 import { PRODUCT_LABEL } from '@/lib/constants/products'
 import type { OrderStatus, UserRole } from '@/types/app.types'
+
+const card: React.CSSProperties = {
+  background: '#fff',
+  border: '0.5px solid #D3D1C7',
+  borderRadius: 14,
+  overflow: 'hidden',
+}
+const cardPad: React.CSSProperties = { padding: '18px 20px' }
+const sectionLabel: React.CSSProperties = {
+  fontSize: 9,
+  fontWeight: 500,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  color: '#888780',
+  marginBottom: 10,
+}
+const detailRow: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '8px 0',
+  borderBottom: '0.5px solid #F1EFE8',
+}
 
 export default async function OrderDetailPage({
   params,
@@ -26,20 +46,14 @@ export default async function OrderDetailPage({
   const { orderId } = await params
 
   const orderRes = await supabase.from('orders').select('*').eq('id', orderId).single()
-
   if (!orderRes.data || orderRes.error) notFound()
 
   const order = orderRes.data
   const userRole = user.role
 
-  // Fetch related data separately
   const [customerRes, itemsRes, creatorRes, mediaResult] = await Promise.all([
     supabase.from('customers').select('*').eq('id', order.customer_id).single(),
-    supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', orderId)
-      .order('sequence_number'),
+    supabase.from('order_items').select('*').eq('order_id', orderId).order('sequence_number'),
     supabase.from('profiles').select('full_name').eq('id', order.created_by).single(),
     getOrderMedia(orderId),
   ])
@@ -49,20 +63,13 @@ export default async function OrderDetailPage({
   const creator = creatorRes.data
   const initialMedia = mediaResult.success ? mediaResult.data : []
 
-  // Determine upload/delete permissions
   const canUpload = userRole
     ? ['super_admin', 'admin', 'support_staff', 'tailor_master', 'tailor'].includes(userRole)
     : false
-  const canDelete = userRole
-    ? ['super_admin', 'admin'].includes(userRole)
-    : false
+  const canDelete = userRole ? ['super_admin', 'admin'].includes(userRole) : false
 
-  // Fetch measurements and assignments for each item
   const [measurementsRes, assignmentsRes] = await Promise.all([
-    supabase
-      .from('order_measurements')
-      .select('*')
-      .in('order_item_id', items.map(i => i.id)),
+    supabase.from('order_measurements').select('*').in('order_item_id', items.map(i => i.id)),
     supabase
       .from('tailor_assignments')
       .select('*, tailor:profiles(id, full_name)')
@@ -84,65 +91,66 @@ export default async function OrderDetailPage({
   ])
 
   return (
-    <div className="max-w-4xl space-y-5">
+    <div className="max-w-4xl" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-500">
-        <Link href="/orders" className="hover:text-slate-700">Orders</Link>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span className="font-mono font-semibold text-slate-900">{order.order_number}</span>
+      <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <Link href="/orders" style={{ color: '#888780', textDecoration: 'none' }}>Orders</Link>
+        <ChevronRight className="w-3 h-3" />
+        <span style={{ color: '#2C2C2A', fontWeight: 500 }}>{order.order_number}</span>
       </nav>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      {/* Hero header */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'start', gap: 16 }}>
         <div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900 font-mono">{order.order_number}</h1>
-            <OrderStatusBadge status={order.status as OrderStatus} />
-            {order.ai_intake_used && (
-              <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
-                <Cpu className="w-3 h-3" /> AI Intake
-              </span>
-            )}
-            {order.priority === 1 && (
-              <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
-                <AlertTriangle className="w-3 h-3" /> Urgent
-              </span>
-            )}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 52, fontWeight: 700, letterSpacing: '-2.5px', color: '#0f2416', lineHeight: 0.95, fontFamily: 'monospace' }}>
+              {order.order_number}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 5, gap: 5 }}>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                <OrderStatusBadge status={order.status as OrderStatus} />
+                {order.priority === 1 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#2C2C2A', color: '#F1EFE8' }}>
+                    Urgent
+                  </span>
+                )}
+                {order.ai_intake_used && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#EEEDFE', color: '#3C3489' }}>
+                    <Cpu className="w-2.5 h-2.5" /> AI Intake
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
+          <p style={{ fontSize: 11, color: '#888780', marginTop: 8 }}>
             Created {formatDateTime(order.created_at)}
-            {creator && <span> by <span className="font-medium">{creator.full_name}</span></span>}
+            {creator && <span> · by <span style={{ fontWeight: 500, color: '#5F5E5A' }}>{creator.full_name}</span></span>}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', gap: 7 }}>
           {userRole && ['super_admin', 'admin', 'support_staff'].includes(userRole) && (
             <Link
               href={`/orders/${orderId}/edit`}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, fontSize: 12, fontWeight: 500, background: '#fff', border: '0.5px solid #D3D1C7', color: '#2C2C2A', textDecoration: 'none' }}
             >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
+              <Pencil className="w-3.5 h-3.5" /> Edit
             </Link>
           )}
           <Link
             href={`/orders/${orderId}/timeline`}
-            className="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, fontSize: 12, fontWeight: 500, background: '#fff', border: '0.5px solid #D3D1C7', color: '#2C2C2A', textDecoration: 'none' }}
           >
-            View Timeline
+            Timeline
           </Link>
         </div>
       </div>
 
-      {/* Status stepper + actions — the most important section */}
-      <div className="bg-white rounded-xl border-2 border-slate-200 p-5 space-y-4">
-        <h2 className="font-semibold text-sm uppercase tracking-wide text-slate-500">
-          Production Status
-        </h2>
+      {/* Status stepper */}
+      <div style={{ ...card, ...cardPad }}>
+        <div style={sectionLabel}>Production Status</div>
         <OrderStatusStepper currentStatus={order.status as OrderStatus} />
-
         {userRole && (
-          <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs text-slate-400 mb-2">Available actions for your role ({userRole.replace(/_/g, ' ')}):</p>
+          <div style={{ paddingTop: 14, marginTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
             <OrderStatusActions
               order={{ id: order.id, status: order.status as OrderStatus }}
               userRole={userRole}
@@ -151,83 +159,72 @@ export default async function OrderDetailPage({
         )}
       </div>
 
-      {/* Customer + order meta */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-            <User className="w-4 h-4 text-slate-400" /> Customer
-          </h2>
-          {customer ? (
-            <>
-              <Link
-                href={`/customers/${customer.id}`}
-                className="font-semibold text-blue-600 hover:text-blue-800 text-sm"
-              >
-                {customer.full_name}
-              </Link>
-              <p className="text-sm text-slate-600 mt-0.5">{customer.phone}</p>
-              {customer.organization && (
-                <p className="text-sm text-slate-500">{customer.organization}</p>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-slate-400">Customer not found</p>
-          )}
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-400" /> Order Details
-          </h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Delivery Date</span>
-              <span className="font-medium text-slate-900">
-                {order.delivery_date ? formatDate(order.delivery_date) : '—'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Priority</span>
-              <span className="font-medium text-slate-900">
-                {order.priority === 1 ? '🔴 Urgent' : order.priority === 2 ? '🟡 Normal' : '🟢 Low'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Total Items</span>
-              <span className="font-medium text-slate-900">{order.total_items}</span>
-            </div>
-            {order.confirmed_at && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Confirmed</span>
-                <span className="font-medium text-slate-900">{formatDate(order.confirmed_at)}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Special instructions */}
       {order.special_instructions && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-          <MessageSquare className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+        <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 12, padding: '12px 16px', display: 'flex', gap: 10 }}>
+          <MessageSquare className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#854F0B' }} />
           <div>
-            <p className="text-sm font-medium text-amber-900 mb-0.5">Special Instructions</p>
-            <p className="text-sm text-amber-800">{order.special_instructions}</p>
+            <p style={{ fontSize: 11, fontWeight: 500, color: '#854F0B', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Special Instructions</p>
+            <p style={{ fontSize: 12, color: '#633806', lineHeight: 1.5 }}>{order.special_instructions}</p>
           </div>
         </div>
       )}
 
-      {/* Media & References — shown before items so tailors see voice notes and images first */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-        <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-          <Paperclip className="w-4 h-4 text-slate-400" />
+      {/* Customer + order details */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ ...card, ...cardPad }}>
+          <div style={sectionLabel}>Customer</div>
+          {customer ? (
+            <>
+              <Link
+                href={`/customers/${customer.id}`}
+                style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.5px', color: '#0f2416', textDecoration: 'none', lineHeight: 1.1 }}
+              >
+                {customer.full_name}
+              </Link>
+              <p style={{ fontSize: 12, color: '#5F5E5A', marginTop: 4 }}>{customer.phone}</p>
+              {customer.organization && (
+                <p style={{ fontSize: 11, color: '#888780', marginTop: 2 }}>{customer.organization}</p>
+              )}
+            </>
+          ) : (
+            <p style={{ fontSize: 12, color: '#888780' }}>Customer not found</p>
+          )}
+        </div>
+
+        <div style={{ ...card, ...cardPad }}>
+          <div style={sectionLabel}>Order Details</div>
+          <div>
+            {[
+              { label: 'Delivery date', value: order.delivery_date ? formatDate(order.delivery_date) : '—' },
+              {
+                label: 'Priority',
+                value: order.priority === 1 ? 'Urgent' : order.priority === 2 ? 'Normal' : 'Low',
+                style: order.priority === 1 ? { color: '#A32D2D' } : undefined,
+              },
+              { label: 'Total items', value: String(order.total_items) },
+              ...(order.confirmed_at ? [{ label: 'Confirmed at', value: formatDate(order.confirmed_at) }] : []),
+            ].map((row, i, arr) => (
+              <div key={row.label} style={{ ...detailRow, ...(i === arr.length - 1 ? { borderBottom: 'none', paddingBottom: 0 } : {}) }}>
+                <span style={{ fontSize: 11, color: '#888780' }}>{row.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#2C2C2A', ...row.style }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Media */}
+      <div style={{ ...card, ...cardPad }}>
+        <div style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Paperclip className="w-3.5 h-3.5" />
           Media &amp; References
           {initialMedia.length > 0 && (
-            <span className="text-xs font-normal text-slate-400 ml-1">
+            <span style={{ color: '#888780', fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10 }}>
               ({initialMedia.length} file{initialMedia.length !== 1 ? 's' : ''})
             </span>
           )}
-        </h2>
+        </div>
         <MediaSection
           orderId={orderId}
           initialMedia={initialMedia}
@@ -237,14 +234,13 @@ export default async function OrderDetailPage({
       </div>
 
       {/* Order items */}
-      <div className="space-y-4">
-        <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-          <Package className="w-4 h-4 text-slate-400" />
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888780', marginBottom: 10 }}>
           Items ({items.length})
-        </h2>
+        </p>
 
         {items.length === 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 py-10 text-center text-sm text-slate-400">
+          <div style={{ ...card, padding: '40px 24px', textAlign: 'center', fontSize: 12, color: '#888780' }}>
             No items on this order.
           </div>
         )}
@@ -252,85 +248,85 @@ export default async function OrderDetailPage({
         {items.map((item, i) => {
           const measurement = measurementsMap[item.id]
           const assignment = assignmentsMap[item.id]
+          const measEntries = measurement
+            ? Object.entries(measurement).filter(([k, v]) => !MEASUREMENT_SKIP.has(k) && v !== null && v !== '')
+            : []
 
           return (
-            <div key={item.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div key={item.id} style={{ ...card, marginBottom: 10 }}>
               {/* Item header */}
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-900">
-                      {PRODUCT_LABEL[item.product_type as keyof typeof PRODUCT_LABEL] ?? item.product_type}
-                      {' '}&times; {item.quantity}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap text-xs">
-                      {item.gender && item.gender !== 'unisex' && (
-                        <span className={`px-1.5 py-0.5 rounded font-medium ${item.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {item.gender === 'female' ? 'Female' : 'Male'}
-                        </span>
-                      )}
-                      {item.color && <span className="text-slate-500">Color: <span className="font-medium text-slate-700">{item.color}</span></span>}
-                      {item.piping_color && <span className="text-slate-500">Piping: <span className="font-medium text-slate-700">{item.piping_color}</span></span>}
-                      {item.has_embroidery && (
-                        <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">
-                          Embroidery{item.embroidery_name ? `: ${item.embroidery_name}` : ''}
-                        </span>
-                      )}
-                      {item.unit_price && (
-                        <span className="text-slate-500">₹{item.unit_price}</span>
-                      )}
-                    </div>
+              <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'start', gap: 10, borderBottom: '0.5px solid #F1EFE8' }}>
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.4px', color: '#2C2C2A' }}>
+                    {PRODUCT_LABEL[item.product_type as keyof typeof PRODUCT_LABEL] ?? item.product_type}
+                    {' '}&times; {item.quantity}
+                  </p>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 5 }}>
+                    {item.gender && item.gender !== 'unisex' && (
+                      <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: item.gender === 'female' ? '#FAEEDA' : '#E6F1FB', color: item.gender === 'female' ? '#633806' : '#0C447C' }}>
+                        {item.gender === 'female' ? 'Female' : 'Male'}
+                      </span>
+                    )}
+                    {item.color && (
+                      <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#F1EFE8', color: '#444441' }}>
+                        {item.color}
+                      </span>
+                    )}
+                    {item.piping_color && (
+                      <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#F1EFE8', color: '#444441' }}>
+                        Piping: {item.piping_color}
+                      </span>
+                    )}
+                    {item.has_embroidery && (
+                      <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#EEEDFE', color: '#3C3489' }}>
+                        Embroidery{item.embroidery_name ? `: ${item.embroidery_name}` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <OrderStatusBadge status={item.status as OrderStatus} />
               </div>
 
               {/* Measurements */}
-              {measurement && (
-                <div className="px-5 py-3 bg-slate-50 border-b border-slate-100">
-                  <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-                    <Ruler className="w-3.5 h-3.5" /> Measurements (cm)
-                  </p>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                    {Object.entries(measurement)
-                      .filter(([k, v]) => !MEASUREMENT_SKIP.has(k) && v !== null && v !== '')
-                      .map(([k, v]) => (
-                        <div key={k} className="text-center">
-                          <p className="text-[10px] text-slate-400 capitalize mb-0.5">
-                            {k.replace(/_/g, ' ')}
-                          </p>
-                          <p className="text-sm font-bold text-slate-800">{String(v)}</p>
-                        </div>
-                      ))}
-                  </div>
-                  {measurement.notes && (
-                    <p className="text-xs text-slate-500 mt-2">{measurement.notes}</p>
-                  )}
+              {measEntries.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', background: '#F7F5EE', padding: '12px 18px', borderBottom: '0.5px solid #F1EFE8' }}>
+                  {measEntries.map(([k, v]) => (
+                    <div key={k} style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: 9, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                        {k.replace(/_/g, ' ')}
+                      </p>
+                      <p style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.5px', color: '#2C2C2A' }}>{String(v)}</p>
+                      <p style={{ fontSize: 9, color: '#888780' }}>cm</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {measurement?.notes && (
+                <div style={{ padding: '8px 18px', background: '#F7F5EE', borderBottom: '0.5px solid #F1EFE8', fontSize: 11, color: '#888780' }}>
+                  {measurement.notes}
                 </div>
               )}
 
               {/* Assignment */}
               {assignment && (
-                <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2 text-sm">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-slate-500">Assigned to</span>
-                  <span className="font-semibold text-slate-800">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderBottom: item.special_instructions ? '0.5px solid #F1EFE8' : 'none' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#085041', flexShrink: 0 }}>
+                    {(assignment as { tailor?: { full_name: string } }).tailor?.full_name?.charAt(0) ?? '?'}
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: '#2C2C2A' }}>
                     {(assignment as { tailor?: { full_name: string } }).tailor?.full_name ?? 'Unknown'}
                   </span>
                   {assignment.estimated_hours && (
-                    <span className="text-slate-400 flex items-center gap-1">
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: '#888780', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Clock className="w-3 h-3" /> {assignment.estimated_hours}h est.
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Special instructions */}
+              {/* Item special instructions */}
               {item.special_instructions && (
-                <div className="px-5 py-3 text-sm text-slate-600 bg-amber-50/50">
+                <div style={{ padding: '10px 18px', fontSize: 12, color: '#633806', background: '#FAEEDA50' }}>
                   {item.special_instructions}
                 </div>
               )}
@@ -338,7 +334,6 @@ export default async function OrderDetailPage({
           )
         })}
       </div>
-
     </div>
   )
 }

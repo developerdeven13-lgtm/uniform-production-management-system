@@ -41,10 +41,12 @@ export default async function MyTasksPage() {
     .limit(10)
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">My Tasks</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2416', letterSpacing: '-0.5px', lineHeight: 1 }}>
+          My Tasks
+        </h1>
+        <p style={{ fontSize: 11, color: '#888780', marginTop: 4 }}>
           {data?.length ?? 0} active assignment{data?.length !== 1 ? 's' : ''}
         </p>
       </div>
