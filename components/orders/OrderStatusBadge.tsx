@@ -16,7 +16,7 @@ export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
         alignItems: 'center',
         padding: '3px 9px',
         borderRadius: '99px',
-        fontSize: '10px',
+        // fontSize: '10px',
         fontWeight: 500,
         letterSpacing: '0.01em',
         whiteSpace: 'nowrap',

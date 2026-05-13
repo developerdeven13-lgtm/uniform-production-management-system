@@ -58,15 +58,15 @@ export function Sidebar({ profile, onClose }: SidebarProps) {
     .toUpperCase()
 
   return (
-    <div className="flex flex-col h-full w-52" style={{ background: '#0f2416' }}>
+    <div className="flex flex-col h-full lg:w-52 xl:w-60 2xl:w-75" style={{ background: '#0f2416' }}>
       {/* Logo */}
       <div
         className="flex items-center justify-between px-[18px] py-5 shrink-0"
         style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}
       >
         <div>
-          <p className="text-white font-bold text-[22px] leading-none tracking-tight">Midas</p>
-          <p className="text-[9px] font-medium uppercase tracking-[0.12em] mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <p className="text-white font-bold text-[30px] leading-none tracking-tight">Medisewa</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
             Uniform Production
           </p>
         </div>
@@ -90,7 +90,7 @@ export function Sidebar({ profile, onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className="flex items-center gap-[9px] px-[10px] py-[9px] rounded-[9px] text-xs font-medium transition-all"
+              className="flex items-center gap-[9px] px-[10px] py-[9px] rounded-[9px] text-xs 2xl:text-lg font-medium transition-all"
               style={
                 isActive
                   ? { background: 'rgba(255,255,255,0.10)', color: '#fff' }
