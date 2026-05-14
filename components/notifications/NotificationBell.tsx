@@ -20,40 +20,40 @@ const NOTIFICATION_ICONS: Record<string, string> = {
 
 interface NotificationBellProps {
   userId: string
+  className?: string
 }
 
-export function NotificationBell({ userId }: NotificationBellProps) {
+export function NotificationBell({ userId, className }: NotificationBellProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications(userId)
 
-  // Close on outside click
+  // Close on outside tap/click — use pointerdown so it fires on iOS touch too
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
   }, [])
 
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen(o => !o)}
-        className="relative p-2 rounded-lg transition-colors"
-        style={{ color: '#5F5E5A' }}
+        className={cn(
+          'relative flex items-center justify-center rounded-lg transition-colors',
+          className ?? 'text-[#5F5E5A]'
+        )}
+        style={{ width: 40, height: 40 }}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
-        <Bell className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+        <Bell className="w-4.5 h-4.5" />
         {unreadCount > 0 && (
-          <span
-            className="absolute top-1 right-1 w-[14px] h-[14px] text-white text-[9px] font-bold rounded-full flex items-center justify-center"
-            style={{ background: '#E24B4A' }}
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span className="absolute top-1.75 right-1.75 w-1.5 h-1.5 rounded-full bg-[#E24B4A]" />
         )}
       </button>
 

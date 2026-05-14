@@ -48,7 +48,7 @@ export default async function DashboardPage() {
   )
 
   return (
-    <div className="max-w-6xl">
+    <div className="max-w-6xl mx-auto w-full">
       {/* Hero stat */}
       <div className="mb-0">
         <div
@@ -496,7 +496,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Right: stats panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {/* <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <div
             style={{
               background: "#fff",
@@ -508,11 +508,10 @@ export default async function DashboardPage() {
               gap: 0,
             }}
           >
-            {/* Completion */}
+  
             <div style={{ marginBottom: 16 }}>
               <div
                 style={{
-                  // fontSize: 9,
                   fontWeight: 500,
                   color: "#888780",
                   textTransform: "uppercase",
@@ -570,11 +569,9 @@ export default async function DashboardPage() {
               }}
             />
 
-            {/* Urgent */}
             <div style={{ marginBottom: 16 }}>
               <div
                 style={{
-                  // fontSize: 9,
                   fontWeight: 500,
                   color: "#888780",
                   textTransform: "uppercase",
@@ -630,11 +627,9 @@ export default async function DashboardPage() {
               }}
             />
 
-            {/* Customers */}
             <div style={{ marginBottom: 16 }}>
               <div
                 style={{
-                  // fontSize: 9,
                   fontWeight: 500,
                   color: "#888780",
                   textTransform: "uppercase",
@@ -669,11 +664,9 @@ export default async function DashboardPage() {
               }}
             />
 
-            {/* Quick actions */}
             <div>
               <div
                 style={{
-                  // fontSize: 9,
                   fontWeight: 500,
                   color: "#888780",
                   textTransform: "uppercase",
@@ -723,7 +716,7 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

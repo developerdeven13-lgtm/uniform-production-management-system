@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Logo */}
         <div style={{ marginBottom: 28 }}>
           <p style={{ fontSize: 32, fontWeight: 700, color: '#0f2416', letterSpacing: '-1.5px', lineHeight: 1 }}>
-            Midas
+            Medisewa
           </p>
           <p style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#888780', marginTop: 4 }}>
             Uniform Production Management
@@ -35,7 +35,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 10, color: '#888780', marginTop: 16 }}>
-          Midas Health Services · Uniform Production
+          Medisewa Health Services · Uniform Production
         </p>
       </div>
     </div>

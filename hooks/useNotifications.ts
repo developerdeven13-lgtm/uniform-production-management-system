@@ -35,8 +35,13 @@ export function useNotifications(userId: string | undefined) {
     if (!userId) return
     const supabase = createClient()
 
+    // Unique suffix so multiple NotificationBell instances (mobile + desktop
+    // headers) each get their own channel and don't hit the
+    // "cannot add callbacks after subscribe()" error.
+    const channelName = `notifications:${userId}:${Math.random().toString(36).slice(2)}`
+
     const channel = supabase
-      .channel(`notifications:${userId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSidebarStats } from '@/lib/data/sidebar-stats'
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Label({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[9px] font-medium uppercase tracking-[0.1em] text-[#888780] mb-2.5">
       {children}
@@ -13,53 +13,15 @@ function Divider() {
 }
 
 export async function RightSidebar() {
-  const supabase = await createClient()
-
-  const [ordersRes, customersRes, tailorsRes, assignmentsRes] = await Promise.all([
-    supabase.from('orders').select('status, priority'),
-    supabase.from('customers').select('id', { count: 'exact', head: true }),
-    supabase
-      .from('profiles')
-      .select('id, full_name')
-      .in('role', ['tailor', 'tailor_master'])
-      .eq('is_active', true)
-      .order('full_name'),
-    supabase
-      .from('tailor_assignments')
-      .select('tailor_id')
-      .eq('is_active', true)
-      .is('completed_at', null),
-  ])
-
-  const orders = ordersRes.data ?? []
-  const totalOrders = orders.length
-  const delivered = orders.filter(o => o.status === 'delivered').length
-  const urgent = orders.filter(o => o.priority === 1).length
-  const completionRate = totalOrders > 0 ? Math.round((delivered / totalOrders) * 100) : 0
-  const totalCustomers = customersRes.count ?? 0
-
-  const tailors = (tailorsRes.data ?? []).slice(0, 5)
-  const activeAssignments = assignmentsRes.data ?? []
-
-  const tailorRows = tailors.map(tailor => {
-    const activeCount = activeAssignments.filter(a => a.tailor_id === tailor.id).length
-    const load = activeCount === 0 ? 'free' : activeCount <= 3 ? 'moderate' : 'busy'
-    const initials = tailor.full_name
-      .split(' ')
-      .slice(0, 2)
-      .map((n: string) => n[0])
-      .join('')
-      .toUpperCase()
-    const dotColor = load === 'free' ? '#1D9E75' : load === 'moderate' ? '#EF9F27' : '#E24B4A'
-    return { ...tailor, activeCount, initials, dotColor }
-  })
+  const { totalOrders, delivered, urgent, completionRate, totalCustomers, tailorRows } =
+    await getSidebarStats()
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
 
       {/* Completion */}
       <div>
-        <SectionLabel>Completion</SectionLabel>
+        <Label>Completion</Label>
         <div className="flex items-baseline gap-1 leading-none">
           <span
             className="font-bold tracking-[-2px] leading-none text-[#2C2C2A]"
@@ -84,7 +46,7 @@ export async function RightSidebar() {
 
       {/* Urgent */}
       <div>
-        <SectionLabel>Urgent</SectionLabel>
+        <Label>Urgent</Label>
         <div
           className="rounded-[10px] p-3"
           style={{ background: '#FCEBEB', border: '0.5px solid #F7C1C1' }}
@@ -108,7 +70,7 @@ export async function RightSidebar() {
 
       {/* Customers */}
       <div>
-        <SectionLabel>Customers</SectionLabel>
+        <Label>Customers</Label>
         <div
           className="font-bold tracking-[-1.5px] leading-none text-[#2C2C2A]"
           style={{ fontSize: 36 }}
@@ -122,7 +84,7 @@ export async function RightSidebar() {
 
       {/* Tailor workload */}
       <div className="flex-1">
-        <SectionLabel>Tailor Workload</SectionLabel>
+        <Label>Tailor Workload</Label>
         {tailorRows.length === 0 ? (
           <p className="text-[10px] text-[#888780]">No tailors found</p>
         ) : (
@@ -132,18 +94,15 @@ export async function RightSidebar() {
                 key={tailor.id}
                 className="flex items-center gap-2 py-2"
                 style={{
-                  borderBottom:
-                    i < tailorRows.length - 1 ? '0.5px solid #F1EFE8' : 'none',
+                  borderBottom: i < tailorRows.length - 1 ? '0.5px solid #F1EFE8' : 'none',
                 }}
               >
-                {/* Avatar */}
                 <div
                   className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 text-[9px] font-bold text-[#5F5E5A]"
                   style={{ background: '#F1EFE8' }}
                 >
                   {tailor.initials}
                 </div>
-                {/* Name + count */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-medium text-[#2C2C2A] truncate leading-tight">
                     {tailor.full_name.split(' ')[0]}
@@ -152,7 +111,6 @@ export async function RightSidebar() {
                     {tailor.activeCount} active
                   </p>
                 </div>
-                {/* Status dot */}
                 <div
                   className="w-1.5 h-1.5 rounded-full shrink-0"
                   style={{ background: tailor.dotColor }}
