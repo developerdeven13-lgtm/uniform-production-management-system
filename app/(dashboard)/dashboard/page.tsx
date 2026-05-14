@@ -255,14 +255,15 @@ export default async function DashboardPage() {
       {/* Two-column body */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 16,
-          alignItems: "start",
+          // display: "grid",
+          // gridTemplateColumns: "1fr",
+          // gap: 16,
+          // alignItems: "start",
         }}
+        // className='bg-red-400'
       >
         {/* Left: recent orders + pipeline */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%" }}>
           {/* Recent orders */}
           <div
             style={{
