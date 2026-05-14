@@ -79,7 +79,7 @@ export function MoreSheet({ profile, onClose }: MoreSheetProps) {
     .toUpperCase()
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end lg:hidden">
+    <div className="fixed inset-0 z-60 flex flex-col justify-end lg:hidden">
       {/* Backdrop */}
       <div
         className="absolute inset-0 transition-opacity duration-300"
@@ -111,7 +111,7 @@ export function MoreSheet({ profile, onClose }: MoreSheetProps) {
           className="flex items-center justify-between px-5 py-3 shrink-0"
           style={{ borderBottom: '0.5px solid #F1EFE8' }}
         >
-          <p className="text-[9px] font-medium uppercase tracking-[0.1em] text-[#888780]">
+          <p className="text-[9px] font-medium uppercase tracking-widest text-[#888780]">
             Menu
           </p>
           <button
@@ -154,7 +154,7 @@ export function MoreSheet({ profile, onClose }: MoreSheetProps) {
                 onClick={onClose}
                 className="flex items-center gap-3 px-3 py-3.5 rounded-xl transition-colors hover:bg-[#F7F5EE] active:bg-[#F1EFE8]"
               >
-                <item.icon className="w-[18px] h-[18px] shrink-0" style={{ color: '#5F5E5A' }} />
+                <item.icon className="w-4.5 h-4.5 shrink-0 text-[#5F5E5A]" />
                 <span className="text-sm font-medium text-[#2C2C2A]">{item.label}</span>
               </Link>
             ))
@@ -168,7 +168,7 @@ export function MoreSheet({ profile, onClose }: MoreSheetProps) {
               type="submit"
               className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl transition-colors text-left hover:bg-[#FCEBEB] active:bg-[#F7C1C1]"
             >
-              <LogOut className="w-[18px] h-[18px] shrink-0" style={{ color: '#E24B4A' }} />
+              <LogOut className="w-4.5 h-4.5 shrink-0 text-[#E24B4A]" />
               <span className="text-sm font-medium" style={{ color: '#E24B4A' }}>
                 Sign out
               </span>
