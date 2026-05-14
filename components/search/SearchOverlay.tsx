@@ -101,8 +101,8 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
         onClick={onClose}
       />
 
-      {/* Panel — slides down from top */}
-      <div className="relative z-10 flex flex-col max-h-[85vh] overflow-hidden mx-auto w-full max-w-2xl mt-0 lg:mt-16 lg:rounded-2xl bg-white shadow-2xl">
+      {/* Panel — offset by fixed mobile header height on small screens */}
+      <div className="relative z-10 flex flex-col max-h-[85vh] overflow-hidden mx-auto w-full max-w-2xl mt-13.5 lg:mt-16 lg:rounded-2xl bg-white shadow-2xl">
         {/* Search input row */}
         <div
           className="flex items-center gap-3 px-4 sm:px-5 shrink-0"

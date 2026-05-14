@@ -256,7 +256,7 @@ export default async function DashboardPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 280px",
+          gridTemplateColumns: "1fr",
           gap: 16,
           alignItems: "start",
         }}
