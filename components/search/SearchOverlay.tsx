@@ -13,7 +13,8 @@ interface OrderResult {
   status: OrderStatus
   priority: number
   delivery_date: string | null
-  customer: { full_name: string } | null
+  // Supabase returns joined rows as an array even for many-to-one relations
+  customer: { full_name: string }[] | null
 }
 
 interface CustomerResult {
@@ -199,9 +200,9 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
                         >
                           {order.order_number}
                         </p>
-                        {order.customer && (
+                        {order.customer?.[0] && (
                           <p className="text-xs mt-0.5 truncate" style={{ color: '#888780' }}>
-                            {order.customer.full_name}
+                            {order.customer[0].full_name}
                           </p>
                         )}
                       </div>
