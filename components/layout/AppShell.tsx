@@ -6,12 +6,18 @@ import { TopBar } from './TopBar'
 import { cn } from '@/lib/utils/cn'
 import type { ServerUser } from '@/lib/auth/server-session'
 
-export function AppShell({ children, profile }: { children: React.ReactNode; profile: ServerUser }) {
+interface AppShellProps {
+  children: React.ReactNode
+  profile: ServerUser
+  rightSidebar?: React.ReactNode
+}
+
+export function AppShell({ children, profile, rightSidebar }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="flex h-full">
-      {/* Desktop sidebar */}
+      {/* Desktop left sidebar */}
       <div className="hidden lg:flex shrink-0">
         <Sidebar profile={profile} />
       </div>
@@ -36,6 +42,16 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
           {children}
         </main>
       </div>
+
+      {/* Right sidebar — desktop only (xl+), hidden on tablet/mobile */}
+      {rightSidebar && (
+        <div
+          className="hidden xl:flex flex-col shrink-0 w-44 overflow-hidden"
+          style={{ background: '#fff', borderLeft: '0.5px solid #D3D1C7' }}
+        >
+          {rightSidebar}
+        </div>
+      )}
     </div>
   )
 }

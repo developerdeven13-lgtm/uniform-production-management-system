@@ -20,7 +20,12 @@
       "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\\\\app\\\\\\(admin\\)\\\\orders\\\\[orderId]\\\\edit\")",
       "Bash(Out-Null)",
       "Bash(Write-Host \"done\")",
-      "Bash(mkdir -p \"c:/Users/dell/Desktop/uniform-production-management-system/app/\\(admin\\)/orders/[orderId]/edit\")"
+      "Bash(mkdir -p \"c:/Users/dell/Desktop/uniform-production-management-system/app/\\(admin\\)/orders/[orderId]/edit\")",
+      "Bash(Find \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\\\\app\\\\\\(dashboard\\)\" -type f -name \"*.tsx\" -o -name \"*.ts\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\\\\app\\\\\\(dashboard\\)\" -Recurse -Filter \"*.tsx\")",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\\\\app\" -Directory | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\dell\\\\Desktop\\\\uniform-production-management-system\\\\components\" -Directory | ForEach-Object { $_.Name })"
     ],
     "additionalDirectories": [
       "c:\\Users\\dell\\Desktop\\uniform-production-management-system\\app\\(admin)\\orders\\[orderId]"
