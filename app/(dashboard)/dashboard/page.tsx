@@ -48,7 +48,7 @@ export default async function DashboardPage() {
   )
 
   return (
-    <div className="max-w-6xl mx-auto w-full">
+    <div className="max-w-7xl w-full">
       {/* Hero stat */}
       <div className="mb-0">
         <div
@@ -357,7 +357,7 @@ export default async function DashboardPage() {
                           color: "#2C2C2A",
                           letterSpacing: "-0.3px",
                         }}
-                        className="text-[13px] 2xl:text-[20px]"
+                        className="text-[13px] 2xl:text-[17px]"
                       >
                         {order.order_number}
                       </div>

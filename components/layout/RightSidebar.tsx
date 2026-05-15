@@ -2,10 +2,10 @@ import { getSidebarStats } from '@/lib/data/sidebar-stats'
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[9px] font-medium uppercase tracking-[0.1em] text-[#888780] mb-2.5">
+    <p className="text-[11px] 2xl:text-[15px] font-medium uppercase tracking-[0.1em] text-[#888780] mb-2.5">
       {children}
     </p>
-  )
+  );
 }
 
 function Divider() {
@@ -31,7 +31,7 @@ export async function RightSidebar() {
           </span>
           <span className="text-2xl font-medium text-[#888780]">%</span>
         </div>
-        <p className="text-[10px] text-[#888780] mt-1">
+        <p className="text-[12px] text-[#888780] mt-1">
           {delivered} of {totalOrders} delivered
         </p>
         <div className="mt-2.5 h-1 rounded-full overflow-hidden" style={{ background: '#F1EFE8' }}>
@@ -58,7 +58,7 @@ export async function RightSidebar() {
             {urgent}
           </div>
           <p
-            className="text-[9px] font-medium uppercase tracking-[0.1em] mt-1"
+            className="text-[12px] font-medium uppercase tracking-[0.1em] mt-1"
             style={{ color: '#A32D2D' }}
           >
             Orders need<br />attention now
@@ -77,7 +77,7 @@ export async function RightSidebar() {
         >
           {totalCustomers}
         </div>
-        <p className="text-[10px] text-[#888780] mt-1">Registered clients</p>
+        <p className="text-[12px] text-[#888780] mt-1">Registered clients</p>
       </div>
 
       <Divider />
@@ -104,10 +104,10 @@ export async function RightSidebar() {
                   {tailor.initials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-medium text-[#2C2C2A] truncate leading-tight">
+                  <p className="text-[12px] 2xl:text-[15px] font-medium text-[#2C2C2A] truncate leading-tight">
                     {tailor.full_name.split(' ')[0]}
                   </p>
-                  <p className="text-[9px] text-[#888780] leading-tight">
+                  <p className="text-[10px] 2xl:text-[12px] text-[#888780] leading-tight">
                     {tailor.activeCount} active
                   </p>
                 </div>

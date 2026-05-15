@@ -106,7 +106,7 @@ export function AppShell({ children, profile, rightSidebar, mobileStats }: AppSh
         {/* Centre column */}
         <div className="flex flex-col flex-1 min-w-0" style={{ background: '#EDEBE4' }}>
           {/* Desktop-only topbar (inside the flex flow) */}
-          <TopBar profile={profile} />
+          <TopBar profile={profile} onSearchClick={openSearch} />
 
           {/*
            * pt-17.5 on mobile = 54 px fixed header + 16 px gap
@@ -124,14 +124,14 @@ export function AppShell({ children, profile, rightSidebar, mobileStats }: AppSh
             className={cn(
               'hidden xl:flex flex-col shrink-0 overflow-hidden',
               'transition-[width] duration-200 ease-in-out',
-              rightOpen ? 'w-44' : 'w-9'
+              rightOpen ? 'w-60 2xl:w-80' : 'w-9'
             )}
             style={{ background: '#fff', borderLeft: '0.5px solid #D3D1C7' }}
           >
             <button
               type="button"
               onClick={toggleRight}
-              className="flex items-center justify-center shrink-0 w-6 h-6 rounded-full mx-auto mt-5 mb-1 hover:bg-[#F1EFE8] transition-colors"
+              className="flex items-center justify-start shrink-0 w-6 h-6 rounded-full ml-auto mt-5 mb-1 hover:bg-[#F1EFE8] transition-colors"
               aria-label={rightOpen ? 'Collapse right sidebar' : 'Expand right sidebar'}
             >
               <ChevronRight

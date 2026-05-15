@@ -90,7 +90,7 @@ export function Sidebar({ profile, onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className="flex items-center gap-[9px] px-[10px] py-[9px] rounded-[9px] text-xs 2xl:text-lg font-medium transition-all"
+              className="flex items-center gap-[9px] px-[10px] py-[9px] 2xl:py-[10px] rounded-[9px] text-xs 2xl:text-[17px] font-medium transition-all"
               style={
                 isActive
                   ? { background: 'rgba(255,255,255,0.10)', color: '#fff' }

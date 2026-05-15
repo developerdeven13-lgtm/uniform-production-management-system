@@ -43,13 +43,16 @@ export function NotificationBell({ userId, className }: NotificationBellProps) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          'relative flex items-center justify-center rounded-lg transition-colors',
-          className ?? 'text-[#5F5E5A]'
-        )}
-        style={{ width: 40, height: 40 }}
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-center rounded-[9px] transition-colors hover:bg-[#F1EFE8]"
+        style={{
+          width: 34,
+          height: 34,
+          border: "0.5px solid #D3D1C7",
+          background: "#fff",
+          color: "#5F5E5A",
+        }}
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
         <Bell className="w-4.5 h-4.5" />
         {unreadCount > 0 && (
@@ -60,15 +63,30 @@ export function NotificationBell({ userId, className }: NotificationBellProps) {
       {open && (
         <div
           className="absolute right-0 top-full mt-2 w-80 z-50 overflow-hidden"
-          style={{ background: '#fff', border: '0.5px solid #D3D1C7', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
+          style={{
+            background: "#fff",
+            border: "0.5px solid #D3D1C7",
+            borderRadius: 14,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
+          }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '0.5px solid #F1EFE8' }}>
-            <h3 style={{ fontSize: 12, fontWeight: 600, color: '#2C2C2A' }}>Notifications</h3>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 16px",
+              borderBottom: "0.5px solid #F1EFE8",
+            }}
+          >
+            <h3 style={{ fontSize: 12, fontWeight: 600, color: "#2C2C2A" }}>
+              Notifications
+            </h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
                 className="flex items-center gap-1"
-                style={{ fontSize: 11, color: '#0f2416', fontWeight: 500 }}
+                style={{ fontSize: 11, color: "#0f2416", fontWeight: 500 }}
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all read
@@ -76,14 +94,22 @@ export function NotificationBell({ userId, className }: NotificationBellProps) {
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto" style={{ borderTop: 'none' }}>
+          <div
+            className="max-h-96 overflow-y-auto"
+            style={{ borderTop: "none" }}
+          >
             {notifications.length === 0 ? (
-              <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                <Bell className="w-7 h-7 mx-auto mb-2" style={{ color: '#D3D1C7' }} />
-                <p style={{ fontSize: 12, color: '#888780' }}>No notifications yet</p>
+              <div style={{ padding: "32px 16px", textAlign: "center" }}>
+                <Bell
+                  className="w-7 h-7 mx-auto mb-2"
+                  style={{ color: "#D3D1C7" }}
+                />
+                <p style={{ fontSize: 12, color: "#888780" }}>
+                  No notifications yet
+                </p>
               </div>
             ) : (
-              notifications.map(n => (
+              notifications.map((n) => (
                 <NotificationItem
                   key={n.id}
                   notification={n}
@@ -95,7 +121,7 @@ export function NotificationBell({ userId, className }: NotificationBellProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function NotificationItem({
