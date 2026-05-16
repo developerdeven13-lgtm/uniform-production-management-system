@@ -1,19 +1,29 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth/server-session'
 import Link from 'next/link'
+import {
+  FileText, CheckCircle, User, Scissors,
+  Layers, ShieldCheck, Package, Truck,
+  type LucideIcon,
+} from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import { formatDate } from '@/lib/utils/format-date'
 import type { OrderStatus } from '@/types/app.types'
 
-const PIPELINE_ROWS = [
-  { status: 'draft',         label: 'Draft',        color: '#B4B2A9' },
-  { status: 'confirmed',     label: 'Confirmed',    color: '#85B7EB' },
-  { status: 'assigned',      label: 'Assigned',     color: '#AFA9EC' },
-  { status: 'in_tailoring',  label: 'In Tailoring', color: '#EF9F27' },
-  { status: 'in_embroidery', label: 'Embroidery',   color: '#AFA9EC' },
-  { status: 'quality_check', label: 'QC',           color: '#ED93B1' },
-  { status: 'ready',         label: 'Ready',        color: '#5DCAA5' },
-  { status: 'delivered',     label: 'Delivered',    color: '#1D9E75' },
+const PIPELINE_ROWS: {
+  status: string
+  label: string
+  color: string
+  icon: LucideIcon
+}[] = [
+  { status: 'draft',         label: 'Draft',        color: '#B4B2A9', icon: FileText      },
+  { status: 'confirmed',     label: 'Confirmed',    color: '#85B7EB', icon: CheckCircle   },
+  { status: 'assigned',      label: 'Assigned',     color: '#AFA9EC', icon: User          },
+  { status: 'in_tailoring',  label: 'In Tailoring', color: '#EF9F27', icon: Scissors      },
+  { status: 'in_embroidery', label: 'Embroidery',   color: '#AFA9EC', icon: Layers        },
+  { status: 'quality_check', label: 'QC',           color: '#ED93B1', icon: ShieldCheck   },
+  { status: 'ready',         label: 'Ready',        color: '#5DCAA5', icon: Package       },
+  { status: 'delivered',     label: 'Delivered',    color: '#1D9E75', icon: Truck         },
 ]
 
 export default async function DashboardPage() {
@@ -409,89 +419,131 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* Pipeline breakdown */}
+          {/* Pipeline breakdown — vertical timeline */}
           <div
             style={{
               background: "#fff",
               border: "0.5px solid #D3D1C7",
               borderRadius: 14,
-              padding: "14px 18px",
+              overflow: "hidden",
             }}
           >
+            {/* Header */}
             <div
               style={{
-                // fontSize: 10,
-                fontWeight: 500,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                color: "#888780",
-                marginBottom: 14,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "14px 20px",
+                borderBottom: "0.5px solid #F1EFE8",
               }}
-              className="text-[10px] 2xl:text-[17px]"
             >
-              Pipeline breakdown
+              <span
+                className="text-[10px] 2xl:text-[17px]"
+                style={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.1em", color: "#888780" }}
+              >
+                Pipeline breakdown
+              </span>
+              <span className="text-[10px] 2xl:text-[14px]" style={{ color: "#B4B2A9" }}>
+                {totalOrders} orders total
+              </span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {PIPELINE_ROWS.map(({ status, label, color }) => {
-                const count = orders.filter((o) => o.status === status).length;
-                const pct =
-                  count > 0 ? Math.round((count / maxPipelineCount) * 100) : 0;
-                return (
-                  <Link
-                    key={status}
-                    href={`/orders?status=${status}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      textDecoration: "none",
-                    }}
-                  >
-                    <span
-                      style={{
-                        // fontSize: 10,
-                        color: "#5F5E5A",
-                        width: 100,
-                        flexShrink: 0,
-                      }}
-                      className="text-[10px] 2xl:text-[17px]"
-                    >
-                      {label}
-                    </span>
-                    <div
-                      style={{
-                        flex: 1,
-                        height: 8,
-                        background: "#D3D1C7",
-                        borderRadius: 4,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          borderRadius: 2,
-                          background: color,
-                          width: `${pct}%`,
-                          transition: "width 0.3s",
-                        }}
-                      />
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 17,
-                        fontWeight: 500,
-                        color: "#2C2C2A",
-                        width: 18,
-                        textAlign: "right",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {count}
-                    </span>
-                  </Link>
-                );
-              })}
+
+            {/* Two-column timeline */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:gap-x-16" style={{ padding: "20px 24px", gap: "0 40px" }}>
+              {([PIPELINE_ROWS.slice(0, 4), PIPELINE_ROWS.slice(4)] as typeof PIPELINE_ROWS[]).map(
+                (group, groupIdx) => (
+                  <div key={groupIdx}>
+                    {group.map((row, localIdx) => {
+                      const { status, label, color, icon: Icon } = row
+                      const globalIdx = groupIdx * 4 + localIdx
+                      const count = orders.filter((o) => o.status === status).length
+                      const isActive = count > 0
+                      const isLast = localIdx === group.length - 1
+                      const nextRow = group[localIdx + 1]
+                      const nextCount = nextRow
+                        ? orders.filter((o) => o.status === nextRow.status).length
+                        : 0
+                      const lineGradient = isActive
+                        ? `linear-gradient(to bottom, ${color}, ${nextRow && nextCount > 0 ? nextRow.color : "#D3D1C7"})`
+                        : "#EDEBE4"
+
+                      return (
+                        <Link
+                          key={status}
+                          href={`/orders?status=${status}`}
+                          className="group flex gap-4 2xl:gap-5"
+                          style={{ textDecoration: "none" }}
+                        >
+                          {/* Left: circle + gradient line */}
+                          <div className="flex flex-col items-center shrink-0 w-10 2xl:w-14">
+                            {/* Circle */}
+                            <div
+                              className="w-10 h-10 2xl:w-14 2xl:h-14 rounded-full flex items-center justify-center shrink-0"
+                              style={{
+                                background: isActive ? color : "#F1EFE8",
+                                border: isActive ? "none" : "0.5px solid #D3D1C7",
+                                boxShadow: isActive ? `0 0 0 4px ${color}18` : "none",
+                                transition: "box-shadow 0.2s",
+                              }}
+                            >
+                              <Icon className="w-4 h-4 2xl:w-6 2xl:h-6" style={{ color: isActive ? "#fff" : "#C8C6BD" }} />
+                            </div>
+
+                            {/* Gradient connecting line */}
+                            {!isLast && (
+                              <div
+                                className="w-0.5 2xl:w-[3px] flex-1 my-1 rounded-full"
+                                style={{ minHeight: 32, background: lineGradient }}
+                              />
+                            )}
+                          </div>
+
+                          {/* Right: content */}
+                          <div
+                            className="flex-1 min-w-0"
+                            style={{ paddingBottom: isLast ? 0 : 24, paddingTop: 4 }}
+                          >
+                            {/* Serial + label */}
+                            <div className="flex items-center gap-1.5 mb-1 2xl:mb-2">
+                              <span
+                                className="text-[8px] 2xl:text-[11px] font-bold font-mono tracking-[0.05em]"
+                                style={{ color: "#D3D1C7" }}
+                              >
+                                {String(globalIdx + 1).padStart(2, "0")}
+                              </span>
+                              <span
+                                className="text-[9px] 2xl:text-[12px] font-semibold uppercase tracking-[0.1em]"
+                                style={{ color: isActive ? "#5F5E5A" : "#B4B2A9" }}
+                              >
+                                {label}
+                              </span>
+                            </div>
+
+                            {/* Count */}
+                            <div className="flex items-baseline gap-1.5">
+                              <span
+                                className="text-[30px] 2xl:text-[44px] font-bold leading-none"
+                                style={{ letterSpacing: "-1.2px", color: isActive ? "#2C2C2A" : "#D3D1C7" }}
+                              >
+                                {count}
+                              </span>
+                              {isActive && (
+                                <span
+                                  className="text-[9px] 2xl:text-[13px]"
+                                  style={{ color: "#888780", marginBottom: 1 }}
+                                >
+                                  order{count !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
