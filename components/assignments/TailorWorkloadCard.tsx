@@ -48,7 +48,10 @@ export function TailorWorkloadCard({
         border: selected ? '1.5px solid #0f2416' : '0.5px solid #D3D1C7',
         background: selected ? '#F1EFE8' : '#fff',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.1s',
+        transition: 'all 0.15s',
+        boxShadow: selected
+          ? '0 2px 10px rgba(15,36,22,0.12)'
+          : '0 1px 4px rgba(15,36,22,0.06), 0 0 0 0 transparent',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>

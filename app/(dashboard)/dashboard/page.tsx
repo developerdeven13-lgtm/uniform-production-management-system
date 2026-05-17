@@ -450,7 +450,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Two-column timeline */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:gap-x-16" style={{ padding: "20px 24px", gap: "0 40px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 2xl:gap-x-16" style={{ padding: "20px 24px" }}>
               {([PIPELINE_ROWS.slice(0, 4), PIPELINE_ROWS.slice(4)] as typeof PIPELINE_ROWS[]).map(
                 (group, groupIdx) => (
                   <div key={groupIdx}>

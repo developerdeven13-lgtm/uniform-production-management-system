@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Package, Calendar, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
@@ -38,9 +38,20 @@ export function AssignmentBoard({ items, tailors }: AssignmentBoardProps) {
 
   if (items.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
-        <p className="text-slate-500 text-sm">No items pending assignment.</p>
-        <p className="text-xs text-slate-400 mt-1">Confirm orders first to make items available here.</p>
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '0.5px solid rgba(255,255,255,0.7)',
+          borderRadius: 14,
+          boxShadow: '0 2px 12px rgba(15,36,22,0.06)',
+          padding: '48px 24px',
+          textAlign: 'center',
+        } as React.CSSProperties}
+      >
+        <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A' }}>No items pending assignment.</p>
+        <p style={{ fontSize: 11, color: '#888780', marginTop: 4 }}>Confirm orders first to make items available here.</p>
       </div>
     )
   }
@@ -54,12 +65,23 @@ export function AssignmentBoard({ items, tailors }: AssignmentBoardProps) {
         return (
           <div
             key={item.id}
-            className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+            style={{
+              background: 'rgba(255,255,255,0.72)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              border: '0.5px solid rgba(255,255,255,0.75)',
+              borderRadius: 14,
+              boxShadow: '0 2px 12px rgba(15,36,22,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+              overflow: 'hidden',
+            } as React.CSSProperties}
           >
             <button
               type="button"
               onClick={() => setExpanded(isExpanded ? null : item.id)}
-              className="w-full flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50 transition-colors text-left"
+              className="w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors text-left"
+              style={{ background: 'transparent' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(241,239,232,0.5)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <div className="flex items-start gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
@@ -106,7 +128,7 @@ export function AssignmentBoard({ items, tailors }: AssignmentBoardProps) {
             </button>
 
             {isExpanded && (
-              <div className="px-5 pb-5 border-t border-slate-100 pt-4">
+              <div className="px-5 pb-5 pt-4" style={{ borderTop: '0.5px solid rgba(211,209,199,0.6)' }}>
                 {item.special_instructions && (
                   <p className="text-sm text-slate-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4">
                     {item.special_instructions}
