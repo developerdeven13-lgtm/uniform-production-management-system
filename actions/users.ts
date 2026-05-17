@@ -191,7 +191,7 @@ export async function updateUser(
   if (error || !data) return { success: false, error: 'Failed to update user' }
 
   // Invalidate permission cache for this user — their role may have changed
-  revalidateTag(userPermsCacheTag(userId))
+  revalidateTag(userPermsCacheTag(userId), { expire: 0 })
 
   revalidatePath('/settings/users')
   revalidatePath(`/settings/users/${userId}`)
@@ -238,7 +238,7 @@ export async function setPrivilegeOverride(
   }
 
   // Bust the per-user permission cache immediately
-  revalidateTag(userPermsCacheTag(userId))
+  revalidateTag(userPermsCacheTag(userId), { expire: 0 })
 
   revalidatePath(`/settings/users/${userId}`)
   return { success: true, data: undefined }
