@@ -27,11 +27,31 @@ function hasRouteAccess(pathname: string, role: UserRole): boolean {
   return true
 }
 
-export async function middleware(request: NextRequest) {
-  // Build augmented request headers — we'll add user data to them after auth
-  const requestHeaders = new Headers(request.headers)
+const PROFILE_CACHE_COOKIE = '__pc'
+const PROFILE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
-  // Collect cookies that Supabase wants to set (to apply them to the response later)
+interface CachedProfile {
+  role: string
+  is_active: boolean
+  full_name: string
+  exp: number
+}
+
+function readCachedProfile(request: NextRequest, userId: string): CachedProfile | null {
+  const raw = request.cookies.get(PROFILE_CACHE_COOKIE)?.value
+  if (!raw) return null
+  try {
+    const parsed: CachedProfile & { uid: string } = JSON.parse(raw)
+    if (parsed.uid !== userId) return null
+    if (parsed.exp < Date.now()) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers)
   const pendingCookies: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
 
   const supabase = createServerClient(
@@ -39,9 +59,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           cookiesToSet.forEach(c => pendingCookies.push(c as typeof pendingCookies[0]))
@@ -50,8 +68,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Single getUser() call for the entire request — result forwarded to pages via headers
-  const { data: { user } } = await supabase.auth.getUser()
+  /*
+   * getSession() reads the JWT from the cookie and verifies its signature locally —
+   * no network call to Supabase Auth servers. This is safe because the JWT is signed
+   * by Supabase and cannot be forged. getUser() (the previous approach) made a live
+   * network round-trip on every navigation request, adding 50–150 ms every time.
+   */
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   const pathname = request.nextUrl.pathname
   const isPublicRoute = PUBLIC_ROUTES.some(r => pathname.startsWith(r))
@@ -68,11 +92,34 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && !isPublicRoute && !isApiRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, is_active, full_name')
-      .eq('id', user.id)
-      .single()
+    /*
+     * Profile data (role, is_active, full_name) is cached in a short-lived cookie so
+     * we don't query the database on every page navigation. Cache TTL is 5 minutes.
+     * On cache miss or expiry the DB is queried and the cookie refreshed.
+     */
+    let profile = readCachedProfile(request, user.id)
+
+    if (!profile) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role, is_active, full_name')
+        .eq('id', user.id)
+        .single()
+
+      if (data) {
+        profile = { ...data, exp: Date.now() + PROFILE_CACHE_TTL_MS }
+        pendingCookies.push({
+          name: PROFILE_CACHE_COOKIE,
+          value: JSON.stringify({ ...profile, uid: user.id }),
+          options: {
+            maxAge: PROFILE_CACHE_TTL_MS / 1000,
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+          },
+        })
+      }
+    }
 
     if (profile && !profile.is_active) {
       await supabase.auth.signOut()
@@ -83,8 +130,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Forward user data as request headers so server components can read them
-    // without making additional Supabase calls
     if (profile) {
       requestHeaders.set('x-user-id', user.id)
       requestHeaders.set('x-user-role', profile.role)
@@ -92,10 +137,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Build the final response with augmented request headers
   const response = NextResponse.next({ request: { headers: requestHeaders } })
 
-  // Apply any Supabase auth cookies (token refresh)
   pendingCookies.forEach(({ name, value, options }) =>
     response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
   )

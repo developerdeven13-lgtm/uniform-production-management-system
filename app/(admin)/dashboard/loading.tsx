@@ -42,9 +42,8 @@ export default function DashboardLoading() {
         ))}
       </div>
 
-      {/* Content area */}
+      {/* Content */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
         {/* Recent orders card */}
         <div
           style={{
@@ -54,7 +53,6 @@ export default function DashboardLoading() {
             overflow: 'hidden',
           }}
         >
-          {/* Header row */}
           <div
             style={{
               display: 'flex',
@@ -67,7 +65,6 @@ export default function DashboardLoading() {
             <div className="h-2.5 w-24 rounded-full bg-[#E8E6DE]" />
             <div className="h-2.5 w-14 rounded-full bg-[#F1EFE8]" />
           </div>
-          {/* 5 skeleton rows */}
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
@@ -111,18 +108,15 @@ export default function DashboardLoading() {
             <div className="h-2.5 w-28 rounded-full bg-[#E8E6DE]" />
             <div className="h-2.5 w-20 rounded-full bg-[#F1EFE8]" />
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8" style={{ padding: '20px 24px' }}>
             {[0, 1].map(col => (
               <div key={col} className="space-y-6">
                 {[...Array(4)].map((_, i) => (
                   <div key={i} className="flex gap-4">
-                    {/* Circle + line */}
                     <div className="flex flex-col items-center shrink-0 w-10">
                       <div className="w-10 h-10 rounded-full bg-[#E8E6DE]" />
                       {i < 3 && <div className="w-0.5 flex-1 my-1 bg-[#F1EFE8]" style={{ minHeight: 24 }} />}
                     </div>
-                    {/* Text */}
                     <div style={{ paddingTop: 4, paddingBottom: i < 3 ? 24 : 0 }}>
                       <div className="h-2 w-16 rounded-full bg-[#F1EFE8] mb-2" />
                       <div className="h-8 w-10 rounded bg-[#E0DDD4]" />
