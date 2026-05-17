@@ -1,311 +1,208 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useTransition, useState } from 'react'
-import { toast } from 'sonner'
-import { Scissors, Calendar, AlertTriangle, Play, CheckCircle, Clock, Image, Mic, ChevronDown, ChevronUp } from 'lucide-react'
-import { markItemStarted, markItemComplete } from '@/actions/assignments'
+import Link from 'next/link'
+import { Calendar, AlertTriangle, CheckCircle, Play, Scissors, ChevronRight } from 'lucide-react'
 import { PRODUCT_LABEL } from '@/lib/constants/products'
 import { formatDate, formatRelativeTime } from '@/lib/utils/format-date'
-import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
-import type { OrderStatus } from '@/types/app.types'
-import Link from 'next/link'
 
-interface MediaFile {
+interface ActiveAssignment {
   id: string
-  media_type: string
-  file_name: string
-  public_url: string | null
-  duration_seconds: number | null
-}
-
-interface Assignment {
-  id: string
-  started_at: string | null
   assigned_at: string
+  started_at: string | null
   estimated_hours: number | null
   order_item: {
     id: string
     product_type: string
     quantity: number
-    gender: string | null
     color: string | null
+    gender: string | null
     has_embroidery: boolean
     embroidery_name: string | null
-    special_instructions: string | null
     status: string
     order: {
       id: string
       order_number: string
-      status: string
       delivery_date: string | null
       priority: number
-      special_instructions: string | null
-      customer: { full_name: string; phone: string } | null
-      media: MediaFile[]
+      customer: { full_name: string } | null
     } | null
-    measurements: Record<string, unknown> | null
-    media: MediaFile[]
   } | null
 }
 
-interface MyTasksListProps {
+interface CompletedAssignment {
+  id: string
+  completed_at: string | null
+  order_item: {
+    id: string
+    product_type: string
+    quantity: number
+    order: {
+      id: string
+      order_number: string
+      customer: { full_name: string } | null
+    } | null
+  } | null
+}
+
+interface Props {
   active: unknown[]
   completed: unknown[]
 }
 
-function TaskCard({ assignment }: { assignment: Assignment }) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-  const [showMedia, setShowMedia] = useState(false)
-  const item = assignment.order_item
-  const order = item?.order
+const STATUS_DOT: Record<string, string> = {
+  assigned:    '#85B7EB',
+  in_tailoring:'#EF9F27',
+  quality_check:'#ED93B1',
+  ready:       '#5DCAA5',
+  delivered:   '#1D9E75',
+}
 
+function ActiveCard({ a }: { a: ActiveAssignment }) {
+  const item = a.order_item
+  const order = item?.order
   if (!item || !order) return null
 
-  const isStarted = Boolean(assignment.started_at)
+  const isStarted = Boolean(a.started_at)
+  const dotColor = STATUS_DOT[item.status] ?? '#B4B2A9'
 
-  // Combine order-level media + item-level media; voice notes and images only
-  const allMedia = [
-    ...(order.media ?? []),
-    ...(item.media ?? []),
-  ].filter(m => m.media_type === 'voice_note' || m.media_type === 'image')
-
-  const voiceNotes = allMedia.filter(m => m.media_type === 'voice_note')
-  const images = allMedia.filter(m => m.media_type === 'image')
-
-  const handleStart = () => {
-    startTransition(async () => {
-      const result = await markItemStarted(item.id)
-      if (result.success) {
-        toast.success('Task started — status updated to In Tailoring')
-        router.refresh()
-      } else {
-        toast.error(result.error)
-      }
-    })
-  }
-
-  const handleComplete = () => {
-    startTransition(async () => {
-      const result = await markItemComplete(item.id)
-      if (result.success) {
-        toast.success('Item marked complete — moved to Quality Check')
-        router.refresh()
-      } else {
-        toast.error(result.error)
-      }
-    })
-  }
+  const tags = [
+    item.gender && item.gender !== 'unisex' ? (item.gender === 'female' ? 'Female' : 'Male') : null,
+    item.color ?? null,
+    item.has_embroidery ? (item.embroidery_name ? `Embroidery: ${item.embroidery_name}` : 'Embroidery') : null,
+  ].filter(Boolean) as string[]
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-slate-100">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link
-                href={`/orders/${order.id}`}
-                className="font-semibold text-slate-900 font-mono text-sm hover:text-blue-600"
-              >
-                {order.order_number}
-              </Link>
-              {order.priority === 1 && (
-                <span className="flex items-center gap-0.5 text-xs text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
-                  <AlertTriangle className="w-3 h-3" />
-                  Urgent
+    <Link
+      href={`/my-tasks/${a.id}`}
+      style={{ textDecoration: 'none', display: 'block' }}
+    >
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.8)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '0.5px solid rgba(255,255,255,0.75)',
+          borderRadius: 14,
+          boxShadow: '0 2px 12px rgba(15,36,22,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+          overflow: 'hidden',
+          transition: 'box-shadow 0.15s',
+        }}
+        className="hover:shadow-md"
+      >
+        {/* Card header */}
+        <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(211,209,199,0.5)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                {/* Status dot */}
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#0f2416', letterSpacing: '-0.3px' }}>
+                  {order.order_number}
                 </span>
-              )}
-              <OrderStatusBadge status={item.status as OrderStatus} />
+                {order.priority === 1 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 600, padding: '2px 7px', borderRadius: 99, background: '#FCEBEB', color: '#791F1F', border: '0.5px solid #F7C1C1' }}>
+                    <AlertTriangle style={{ width: 9, height: 9 }} /> Urgent
+                  </span>
+                )}
+                {isStarted && (
+                  <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 7px', borderRadius: 99, background: '#FAEEDA', color: '#633806', border: '0.5px solid #F5D199' }}>
+                    In Progress
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 12, color: '#5F5E5A', fontWeight: 500 }}>
+                {order.customer?.full_name ?? '—'}
+              </p>
             </div>
-            <p className="text-sm text-slate-600 mt-0.5">{order.customer?.full_name}</p>
+            <ChevronRight style={{ width: 15, height: 15, color: '#C4C2B9', flexShrink: 0, marginTop: 2 }} />
           </div>
-          {order.delivery_date && (
-            <div className="flex items-center gap-1 text-xs text-slate-500 shrink-0">
-              <Calendar className="w-3 h-3" />
-              {formatDate(order.delivery_date)}
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Voice notes + images — shown at top so tailor sees them immediately */}
-      {allMedia.length > 0 && (
-        <div className="border-b border-slate-100">
-          <button
-            type="button"
-            onClick={() => setShowMedia(s => !s)}
-            className="w-full flex items-center justify-between px-5 py-2.5 bg-blue-50 hover:bg-blue-100 transition-colors text-sm"
-          >
-            <span className="flex items-center gap-2 font-medium text-blue-700">
-              {voiceNotes.length > 0 && <Mic className="w-3.5 h-3.5" />}
-              {images.length > 0 && <Image className="w-3.5 h-3.5" />}
-              {voiceNotes.length > 0 && `${voiceNotes.length} voice note${voiceNotes.length !== 1 ? 's' : ''}`}
-              {voiceNotes.length > 0 && images.length > 0 && ' · '}
-              {images.length > 0 && `${images.length} image${images.length !== 1 ? 's' : ''}`}
+        {/* Card body */}
+        <div style={{ padding: '12px 16px', borderBottom: '0.5px solid rgba(211,209,199,0.5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: tags.length > 0 ? 8 : 0 }}>
+            <Scissors style={{ width: 12, height: 12, color: '#888780', flexShrink: 0 }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#2C2C2A' }}>
+              {PRODUCT_LABEL[item.product_type as keyof typeof PRODUCT_LABEL] ?? item.product_type} × {item.quantity}
             </span>
-            {showMedia ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />}
-          </button>
+          </div>
 
-          {showMedia && (
-            <div className="px-5 py-3 space-y-3">
-              {voiceNotes.map(vn => (
-                <div key={vn.id} className="space-y-1">
-                  <p className="text-xs text-slate-500 truncate">{vn.file_name}</p>
-                  {vn.public_url ? (
-                    <audio controls src={vn.public_url} className="w-full h-8" />
-                  ) : (
-                    <p className="text-xs text-slate-400">Audio not available</p>
-                  )}
-                </div>
+          {tags.length > 0 && (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {tags.map(tag => (
+                <span key={tag} style={{ fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 99, background: '#F1EFE8', color: '#5F5E5A' }}>
+                  {tag}
+                </span>
               ))}
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {images.map(img => (
-                    img.public_url ? (
-                      <a key={img.id} href={img.public_url} target="_blank" rel="noreferrer">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={img.public_url}
-                          alt={img.file_name}
-                          className="w-full aspect-square object-cover rounded-lg border border-slate-200"
-                        />
-                      </a>
-                    ) : null
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </div>
-      )}
 
-      {/* Item details */}
-      <div className="px-5 py-3 space-y-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Scissors className="w-4 h-4 text-slate-400" />
-          <span className="text-sm font-medium text-slate-900">
-            {PRODUCT_LABEL[item.product_type as keyof typeof PRODUCT_LABEL]} &times; {item.quantity}
+        {/* Card footer */}
+        <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, color: '#888780' }}>
+            {formatRelativeTime(a.assigned_at)}
           </span>
-          {item.gender && item.gender !== 'unisex' && (
-            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${item.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
-              {item.gender === 'female' ? 'Female' : 'Male'}
+          {order.delivery_date ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#888780' }}>
+              <Calendar style={{ width: 11, height: 11 }} />
+              {formatDate(order.delivery_date)}
             </span>
-          )}
-          {item.color && <span className="text-sm text-slate-500">· {item.color}</span>}
-          {item.has_embroidery && (
-            <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
-              Embroidery{item.embroidery_name ? `: ${item.embroidery_name}` : ''}
-            </span>
-          )}
-        </div>
-
-        {/* Measurements */}
-        {item.measurements && (
-          <div className="bg-slate-50 rounded-lg px-3 py-2">
-            <p className="text-xs font-medium text-slate-500 mb-1.5">Measurements (cm)</p>
-            <div className="flex flex-wrap gap-3">
-              {Object.entries(item.measurements)
-                .filter(([k, v]) =>
-                  !['id','order_item_id','customer_id','product_type','custom_measurements','notes','measured_by','measured_at','created_at','updated_at','prefilled_from_profile'].includes(k)
-                  && v !== null
-                )
-                .map(([k, v]) => (
-                  <div key={k} className="text-center">
-                    <p className="text-[10px] text-slate-400 capitalize">{k.replace(/_/g, ' ')}</p>
-                    <p className="text-sm font-semibold text-slate-800">{String(v)}</p>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {order.special_instructions && (
-          <p className="text-sm text-slate-600 bg-amber-50 border border-amber-100 rounded px-3 py-2">
-            <span className="font-medium">Order note:</span> {order.special_instructions}
-          </p>
-        )}
-
-        {item.special_instructions && (
-          <p className="text-sm text-slate-600 bg-amber-50 border border-amber-100 rounded px-3 py-2">
-            <span className="font-medium">Item note:</span> {item.special_instructions}
-          </p>
-        )}
-
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            Assigned {formatRelativeTime(assignment.assigned_at)}
-          </span>
-          {assignment.estimated_hours && (
-            <span>Est: {assignment.estimated_hours}h</span>
-          )}
+          ) : null}
         </div>
       </div>
-
-      {/* Actions */}
-      <div className="px-5 py-3 border-t border-slate-100 flex gap-2">
-        {!isStarted ? (
-          <button
-            onClick={handleStart}
-            disabled={isPending}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            <Play className="w-4 h-4" />
-            Start Task
-          </button>
-        ) : (
-          <button
-            onClick={handleComplete}
-            disabled={isPending}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <CheckCircle className="w-4 h-4" />
-            Mark Complete
-          </button>
-        )}
-      </div>
-    </div>
+    </Link>
   )
 }
 
-export function MyTasksList({ active, completed }: MyTasksListProps) {
+export function MyTasksList({ active, completed }: Props) {
+  const activeList = active as ActiveAssignment[]
+  const completedList = completed as CompletedAssignment[]
+
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Active tasks */}
-      {(active as Assignment[]).length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 py-14 text-center">
-          <Scissors className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">No active assignments.</p>
-          <p className="text-xs text-slate-400 mt-1">Tasks assigned to you will appear here.</p>
+      {activeList.length === 0 ? (
+        <div style={{ background: '#fff', border: '0.5px solid #D3D1C7', borderRadius: 14, padding: '48px 24px', textAlign: 'center' }}>
+          <Scissors style={{ width: 32, height: 32, color: '#D3D1C7', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A' }}>No active assignments</p>
+          <p style={{ fontSize: 12, color: '#888780', marginTop: 4 }}>Tasks assigned to you will appear here.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {(active as Assignment[]).map(a => (
-            <TaskCard key={a.id} assignment={a} />
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {activeList.map(a => <ActiveCard key={a.id} a={a} />)}
         </div>
       )}
 
       {/* Recently completed */}
-      {(completed as Assignment[]).length > 0 && (
+      {completedList.length > 0 && (
         <div>
-          <h2 className="font-semibold text-slate-500 text-sm uppercase tracking-wide mb-3">
+          <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888780', marginBottom: 10 }}>
             Recently Completed
-          </h2>
-          <div className="space-y-2">
-            {(completed as Assignment[]).map(a => (
-              <div key={a.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-3 opacity-60">
-                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                <span className="text-sm font-mono text-slate-700">
-                  {a.order_item?.order?.order_number}
-                </span>
-                <span className="text-sm text-slate-500">
-                  {PRODUCT_LABEL[a.order_item?.product_type as keyof typeof PRODUCT_LABEL] ?? a.order_item?.product_type}
-                </span>
-              </div>
-            ))}
+          </p>
+          <div style={{ background: '#fff', border: '0.5px solid #D3D1C7', borderRadius: 14, overflow: 'hidden' }}>
+            {completedList.map((a, idx) => {
+              const item = a.order_item
+              const order = item?.order
+              if (!item || !order) return null
+              return (
+                <div
+                  key={a.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: idx < completedList.length - 1 ? '0.5px solid #F1EFE8' : 'none' }}
+                >
+                  <CheckCircle style={{ width: 14, height: 14, color: '#1D9E75', flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: '#2C2C2A' }}>
+                    {order.order_number}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#888780' }}>
+                    {PRODUCT_LABEL[item.product_type as keyof typeof PRODUCT_LABEL] ?? item.product_type} × {item.quantity}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#888780', marginLeft: 'auto' }}>
+                    {order.customer?.full_name}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

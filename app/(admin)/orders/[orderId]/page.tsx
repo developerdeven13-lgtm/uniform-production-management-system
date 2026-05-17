@@ -5,16 +5,20 @@ import Link from 'next/link'
 import {
   ChevronRight, Cpu, Pencil, Ruler, Clock, Paperclip,
   MessageSquare, Calendar, AlertTriangle, Package,
-  CheckCircle, Phone, Building2, Scissors,
+  CheckCircle, Phone, Building2, Scissors, Flag,
 } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper'
 import { OrderStatusActions } from '@/components/orders/OrderStatusActions'
 import { MediaSection } from '@/components/media/MediaSection'
+import { RaiseFlagModal } from '@/components/flags/RaiseFlagModal'
+import { FlagList } from '@/components/flags/FlagList'
 import { getOrderMedia } from '@/actions/media'
+import { getOrderFlags } from '@/actions/flags'
 import { formatDate, formatDateTime } from '@/lib/utils/format-date'
 import { PRODUCT_LABEL } from '@/lib/constants/products'
 import { STATUS_LABEL } from '@/lib/constants/order-statuses'
+import { can } from '@/lib/permissions/can'
 import type { OrderStatus } from '@/types/app.types'
 
 /* ── Status pill colors designed for the dark #0f2416 hero background ── */
@@ -74,22 +78,27 @@ export default async function OrderDetailPage({
   const order = orderRes.data
   const userRole = user.role
 
-  const [customerRes, itemsRes, creatorRes, mediaResult] = await Promise.all([
+  const [customerRes, itemsRes, creatorRes, mediaResult, flagsResult] = await Promise.all([
     supabase.from('customers').select('*').eq('id', order.customer_id).single(),
     supabase.from('order_items').select('*').eq('order_id', orderId).order('sequence_number'),
     supabase.from('profiles').select('full_name').eq('id', order.created_by).single(),
     getOrderMedia(orderId),
+    getOrderFlags(orderId),
   ])
 
   const customer = customerRes.data
   const items = itemsRes.data ?? []
   const creator = creatorRes.data
   const initialMedia = mediaResult.success ? mediaResult.data : []
+  const flags = flagsResult.success ? flagsResult.data : []
+  const openFlagCount = flags.filter(f => f.status !== 'resolved').length
 
   const canUpload = userRole
     ? ['super_admin', 'admin', 'support_staff', 'tailor_master', 'tailor'].includes(userRole)
     : false
   const canDelete = userRole ? ['super_admin', 'admin'].includes(userRole) : false
+  const canRaiseFlag = userRole ? can(userRole, 'flags.raise') : false
+  const canResolveFlag = userRole ? can(userRole, 'flags.resolve') : false
 
   const [measurementsRes, assignmentsRes] = await Promise.all([
     supabase.from('order_measurements').select('*').in('order_item_id', items.map(i => i.id)),
@@ -346,6 +355,34 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
+      {/* ── Flags ────────────────────────────────────────────────────────── */}
+      {(canRaiseFlag || flags.length > 0) && (
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '14px 22px', borderBottom: '0.5px solid #F1EFE8' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Flag style={{ width: 14, height: 14, color: openFlagCount > 0 ? '#791F1F' : '#9B9A92' }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#2C2C2A' }}>
+                Flags &amp; Issues
+              </span>
+              {openFlagCount > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: '#FCEBEB', color: '#791F1F', border: '0.5px solid #F7C1C1' }}>
+                  {openFlagCount} open
+                </span>
+              )}
+            </div>
+            {canRaiseFlag && (
+              <RaiseFlagModal
+                orderId={orderId}
+                orderNumber={order.order_number}
+              />
+            )}
+          </div>
+          <div style={{ padding: '16px 22px' }}>
+            <FlagList flags={flags} canResolve={canResolveFlag} />
+          </div>
+        </div>
+      )}
+
       {/* ── Items ────────────────────────────────────────────────────────── */}
       <div>
         <p style={{ ...microLabel, marginBottom: 12 }}>Items ({items.length})</p>
@@ -486,6 +523,16 @@ export default async function OrderDetailPage({
                       <span style={{ marginLeft: 'auto', fontSize: 11, color: '#9B9A92', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
                         <Clock style={{ width: 12, height: 12 }} /> {assignment.estimated_hours}h estimated
                       </span>
+                    )}
+                    {canRaiseFlag && (
+                      <div style={{ marginLeft: assignment.estimated_hours ? 0 : 'auto' }}>
+                        <RaiseFlagModal
+                          orderId={orderId}
+                          orderItemId={item.id}
+                          orderNumber={order.order_number}
+                          itemLabel={`Item ${idx + 1}`}
+                        />
+                      </div>
                     )}
                   </div>
                 )}

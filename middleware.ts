@@ -5,7 +5,7 @@ import type { UserRole } from '@/types/app.types'
 const PUBLIC_ROUTES = ['/login', '/reset-password', '/update-password']
 
 const ROLE_ROUTE_MAP: Record<string, UserRole[]> = {
-  '/settings/users': ['super_admin'],
+  '/settings/users': ['super_admin', 'admin'],
   '/settings': ['super_admin', 'admin'],
   '/reports': ['super_admin', 'admin'],
   '/assignments': ['super_admin', 'admin', 'tailor_master'],
@@ -69,13 +69,14 @@ export async function middleware(request: NextRequest) {
   )
 
   /*
-   * getSession() reads the JWT from the cookie and verifies its signature locally —
-   * no network call to Supabase Auth servers. This is safe because the JWT is signed
-   * by Supabase and cannot be forged. getUser() (the previous approach) made a live
-   * network round-trip on every navigation request, adding 50–150 ms every time.
+   * getUser() verifies the JWT with Supabase Auth servers on every request.
+   * This is the secure approach — it detects revoked sessions and tampered
+   * cookies that getSession() would silently accept.
+   * The profile DB query that previously also ran on every request is now
+   * cached in the __pc cookie (5-min TTL), so the only remaining per-request
+   * cost is this single auth verification call.
    */
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
+  const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
   const isPublicRoute = PUBLIC_ROUTES.some(r => pathname.startsWith(r))

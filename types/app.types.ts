@@ -30,6 +30,52 @@ export type NotificationType =
   | 'embroidery_requested'
   | 'quality_check_failed'
   | 'mention'
+  | 'flag_raised'
+  | 'flag_resolved'
+
+export type FlagStatus = 'open' | 'acknowledged' | 'resolved'
+
+export interface OrderFlag {
+  id: string
+  order_id: string
+  order_item_id: string | null
+  raised_by: string
+  title: string
+  description: string | null
+  status: FlagStatus
+  acknowledged_by: string | null
+  acknowledged_at: string | null
+  resolved_by: string | null
+  resolved_at: string | null
+  resolution_note: string | null
+  created_at: string
+  raiser?: Pick<Profile, 'id' | 'full_name' | 'role'>
+  resolver?: Pick<Profile, 'id' | 'full_name'> | null
+  media?: FlagMedia[]
+}
+
+export interface FlagMedia {
+  id: string
+  flag_id: string
+  media_type: MediaType
+  file_name: string
+  file_size_bytes: number
+  mime_type: string
+  storage_path: string
+  storage_bucket: string
+  duration_seconds: number | null
+  uploaded_by: string
+  created_at: string
+  signedUrl?: string | null
+}
+
+export interface UserPrivilegeOverride {
+  user_id: string
+  permission: string
+  granted: boolean
+  granted_by: string | null
+  created_at: string
+}
 
 export interface Profile {
   id: string

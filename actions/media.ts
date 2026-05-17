@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult, MediaAttachment } from '@/types/app.types'
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
@@ -134,7 +135,10 @@ export interface MediaWithUrl extends MediaAttachment {
   uploaderName: string | null
 }
 
-// Fetch all media for an order with pre-generated signed URLs
+// Fetch all media for an order with pre-generated signed URLs.
+// Uses the service-role client for signed URL generation so ALL roles
+// (tailors, embroidery staff, etc.) can access files regardless of
+// storage bucket RLS policies. Auth is still checked via the user client.
 export async function getOrderMedia(orderId: string): Promise<ActionResult<MediaWithUrl[]>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -144,38 +148,42 @@ export async function getOrderMedia(orderId: string): Promise<ActionResult<Media
     .from('media_attachments')
     .select('*')
     .eq('order_id', orderId)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
 
   if (error) return { success: false, error: 'Failed to fetch media' }
   if (!data || data.length === 0) return { success: true, data: [] }
 
-  // Generate signed URLs for all files in parallel
-  const withUrls = await Promise.all(
-    data.map(async (m) => {
-      let signedUrl: string | null = null
-      try {
-        const { data: urlData } = await supabase.storage
-          .from(m.storage_bucket)
-          .createSignedUrl(m.storage_path, 3600) // 1-hour expiry
-        signedUrl = urlData?.signedUrl ?? null
-      } catch { /* leave null */ }
+  // Admin client bypasses storage RLS — any authenticated user assigned to
+  // an order can receive a signed URL for its reference files.
+  const adminStorage = createAdminClient().storage
 
-      return { ...m, signedUrl, uploaderName: null } as MediaWithUrl
-    })
+  const [withUrls, profilesRes] = await Promise.all([
+    Promise.all(
+      data.map(async (m) => {
+        let signedUrl: string | null = null
+        try {
+          const { data: urlData, error: urlError } = await adminStorage
+            .from(m.storage_bucket)
+            .createSignedUrl(m.storage_path, 3600)
+          if (urlError) console.error('[getOrderMedia] signed URL error:', urlError.message, m.storage_path)
+          signedUrl = urlData?.signedUrl ?? null
+        } catch (e) {
+          console.error('[getOrderMedia] signed URL exception:', e)
+        }
+        return { ...m, signedUrl, uploaderName: null } as MediaWithUrl
+      })
+    ),
+    supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', [...new Set(data.map(m => m.uploaded_by))]),
+  ])
+
+  const profileMap = Object.fromEntries(
+    (profilesRes.data ?? []).map(p => [p.id, p.full_name])
   )
-
-  // Fetch uploader names
-  const uploaderIds = [...new Set(data.map(m => m.uploaded_by))]
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .in('id', uploaderIds)
-
-  const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p.full_name]))
-  const result = withUrls.map(m => ({
-    ...m,
-    uploaderName: profileMap[m.uploaded_by] ?? null,
-  }))
-
-  return { success: true, data: result }
+  return {
+    success: true,
+    data: withUrls.map(m => ({ ...m, uploaderName: profileMap[m.uploaded_by] ?? null })),
+  }
 }
