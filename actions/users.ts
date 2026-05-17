@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { invalidateUserPermissions } from '@/lib/permissions/user-permissions'
+import { userPermsCacheTag } from '@/lib/permissions/user-permissions'
 import type { ActionResult, Profile, UserRole, UserPrivilegeOverride } from '@/types/app.types'
 import type { Permission } from '@/lib/permissions/permissions'
 
@@ -191,7 +191,7 @@ export async function updateUser(
   if (error || !data) return { success: false, error: 'Failed to update user' }
 
   // Invalidate permission cache for this user — their role may have changed
-  invalidateUserPermissions(userId)
+  revalidateTag(userPermsCacheTag(userId))
 
   revalidatePath('/settings/users')
   revalidatePath(`/settings/users/${userId}`)
@@ -238,7 +238,7 @@ export async function setPrivilegeOverride(
   }
 
   // Bust the per-user permission cache immediately
-  invalidateUserPermissions(userId)
+  revalidateTag(userPermsCacheTag(userId))
 
   revalidatePath(`/settings/users/${userId}`)
   return { success: true, data: undefined }

@@ -1,4 +1,4 @@
-import { unstable_cache, revalidateTag } from 'next/cache'
+import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getPermissions, type Permission } from './permissions'
 import type { UserRole } from '@/types/app.types'
@@ -13,8 +13,8 @@ export function userPermsCacheTag(userId: string) {
  *
  * Uses unstable_cache with a per-user tag so:
  *  • Served from Next.js cache on every request after the first (no DB hit)
- *  • Invalidated immediately when an admin changes privileges via invalidateUserPermissions()
- *  • TTL is 60 s as a safety net for stale cache
+ *  • Invalidated immediately when an admin changes privileges
+ *  • 60 s TTL as a safety net
  *
  * The admin client is used so this can run inside unstable_cache
  * (which has no access to request-scoped cookies).
@@ -52,8 +52,4 @@ export async function userCan(
 ): Promise<boolean> {
   const perms = await getUserPermissions(userId, role)
   return perms.has(permission)
-}
-
-export function invalidateUserPermissions(userId: string) {
-  revalidateTag(userPermsCacheTag(userId))
 }
