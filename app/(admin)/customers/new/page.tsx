@@ -1,10 +1,10 @@
 import { CustomerForm } from '@/components/customers/CustomerForm'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 
 export default async function NewCustomerPage() {
-  await requireUser()
+  await requirePermission('customers.create')
 
   return (
     <div className="max-w-2xl space-y-5">

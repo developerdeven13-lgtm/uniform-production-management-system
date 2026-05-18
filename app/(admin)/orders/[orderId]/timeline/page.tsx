@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight, ArrowRight } from 'lucide-react'
@@ -12,7 +12,7 @@ export default async function OrderTimelinePage({
 }: {
   params: Promise<{ orderId: string }>
 }) {
-  await requireUser()
+  await requirePermission('orders.read.all')
   const supabase = await createClient()
 
   const { orderId } = await params

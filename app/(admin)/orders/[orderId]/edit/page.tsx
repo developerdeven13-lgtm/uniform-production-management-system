@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
-import { notFound, redirect } from 'next/navigation'
+import { requirePermission } from '@/lib/auth/require-permission'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { EditOrderForm } from '@/components/orders/EditOrderForm'
@@ -10,12 +10,8 @@ export default async function EditOrderPage({
 }: {
   params: Promise<{ orderId: string }>
 }) {
-  const user = await requireUser()
+  await requirePermission('orders.update')
   const supabase = await createClient()
-
-  if (!['super_admin', 'admin', 'support_staff'].includes(user.role)) {
-    redirect(`/orders`)
-  }
 
   const { orderId } = await params
 

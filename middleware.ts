@@ -1,27 +1,40 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { UserRole } from '@/types/app.types'
+import type { Permission } from '@/lib/permissions/permissions'
+import { getPermissions } from '@/lib/permissions/permissions'
 
 const PUBLIC_ROUTES = ['/login', '/reset-password', '/update-password']
 
-const ROLE_ROUTE_MAP: Record<string, UserRole[]> = {
-  '/settings/users': ['super_admin', 'admin'],
-  '/settings': ['super_admin', 'admin'],
-  '/reports': ['super_admin', 'admin'],
-  '/assignments': ['super_admin', 'admin', 'tailor_master'],
-  '/customers': ['super_admin', 'admin', 'support_staff', 'tailor_master'],
-  '/orders': ['super_admin', 'admin', 'support_staff', 'tailor_master'],
-  '/my-tasks': ['tailor', 'tailor_master'],
-  '/queue': ['embroidery_staff', 'tailor_master', 'super_admin', 'admin'],
-  '/dashboard': ['super_admin', 'admin', 'support_staff', 'tailor_master', 'tailor', 'embroidery_staff'],
+/*
+ * Maps route prefixes to the permission(s) that grant access.
+ * Checked against the user's ROLE DEFAULT permissions only (no per-user
+ * overrides) — middleware cannot reliably invalidate another user's session
+ * cookie when an admin changes privileges. Fine-grained override enforcement
+ * is the responsibility of each page via requirePermission().
+ *
+ * A user has route access if their role holds AT LEAST ONE listed permission.
+ * Routes not listed here are accessible to all authenticated users.
+ */
+const ROUTE_PERMISSION_MAP: Record<string, Permission[]> = {
+  '/settings/users': ['users.manage'],
+  '/settings':       ['settings.manage'],
+  '/reports':        ['analytics.read'],
+  '/assignments':    ['assignments.create', 'assignments.read'],
+  '/customers':      ['customers.read'],
+  '/orders':         ['orders.read.all'],
+  '/my-tasks':       ['orders.read.own'],
+  '/queue':          ['embroidery.update', 'embroidery.assign'],
 }
 
 function hasRouteAccess(pathname: string, role: UserRole): boolean {
-  const sortedRoutes = Object.keys(ROLE_ROUTE_MAP).sort((a, b) => b.length - a.length)
+  const sortedRoutes = Object.keys(ROUTE_PERMISSION_MAP).sort((a, b) => b.length - a.length)
   for (const route of sortedRoutes) {
-    if (pathname.includes(route)) {
-      const allowed = ROLE_ROUTE_MAP[route]
-      return allowed !== undefined && allowed.includes(role)
+    if (pathname.startsWith(route)) {
+      const required = ROUTE_PERMISSION_MAP[route]
+      if (!required || required.length === 0) return true
+      const rolePerms = new Set(getPermissions(role))
+      return required.some(p => rolePerms.has(p))
     }
   }
   return true
@@ -70,11 +83,7 @@ export async function middleware(request: NextRequest) {
 
   /*
    * getUser() verifies the JWT with Supabase Auth servers on every request.
-   * This is the secure approach — it detects revoked sessions and tampered
-   * cookies that getSession() would silently accept.
-   * The profile DB query that previously also ran on every request is now
-   * cached in the __pc cookie (5-min TTL), so the only remaining per-request
-   * cost is this single auth verification call.
+   * Detects revoked sessions and tampered cookies that getSession() misses.
    */
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -93,11 +102,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && !isPublicRoute && !isApiRoute) {
-    /*
-     * Profile data (role, is_active, full_name) is cached in a short-lived cookie so
-     * we don't query the database on every page navigation. Cache TTL is 5 minutes.
-     * On cache miss or expiry the DB is queried and the cookie refreshed.
-     */
     let profile = readCachedProfile(request, user.id)
 
     if (!profile) {

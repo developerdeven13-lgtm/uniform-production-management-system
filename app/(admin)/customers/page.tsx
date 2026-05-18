@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format-date'
@@ -11,7 +11,7 @@ export default async function CustomersPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string }>
 }) {
-  await requireUser()
+  await requirePermission('customers.read')
   const supabase = await createClient()
 
   const params = await searchParams

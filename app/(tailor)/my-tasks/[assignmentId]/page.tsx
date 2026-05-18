@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -23,7 +23,7 @@ export default async function TaskDetailPage({
 }: {
   params: Promise<{ assignmentId: string }>
 }) {
-  await requireUser()
+  await requirePermission('orders.read.own')
   const supabase = await createClient()
   const { assignmentId } = await params
 

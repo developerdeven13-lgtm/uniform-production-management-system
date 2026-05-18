@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
@@ -14,7 +14,7 @@ export default async function OrdersPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; priority?: string; page?: string }>
 }) {
-  const user = await requireUser()
+  const user = await requirePermission('orders.read.all')
   const supabase = await createClient()
 
   const params = await searchParams
@@ -60,7 +60,7 @@ export default async function OrdersPage({
       <PageTitle
         count={total}
         label="Total"
-        title={`Order${total !== 1 ? 's' : ''}`}
+        title={`Order${total !== 1 ? "s" : ""}`}
         action={
           <Link
             href="/orders/new"
@@ -122,7 +122,15 @@ export default async function OrdersPage({
         {/* Filter chips */}
         <div
           className="flex gap-2 items-center overflow-x-auto"
-          style={{ flexWrap: 'nowrap', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', paddingBottom: 2 } as React.CSSProperties}
+          style={
+            {
+              flexWrap: "nowrap",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: 2,
+            } as React.CSSProperties
+          }
         >
           <Link
             href="/orders"
@@ -175,7 +183,7 @@ export default async function OrdersPage({
                     borderColor: "#F7C1C1",
                   }),
             }}
-            className="text-[10px] 2xl:text-[15px]"
+            className="text-[10px] 2xl:text-[15px] text-nowrap"
           >
             ⚠ Urgent
           </Link>
@@ -215,7 +223,7 @@ export default async function OrdersPage({
                       borderColor: "#D3D1C7",
                     }),
               }}
-              className="text-[10px] 2xl:text-[15px]"
+              className="text-[10px] 2xl:text-[15px] text-nowrap"
             >
               {s.label}
             </Link>
@@ -278,148 +286,159 @@ export default async function OrdersPage({
             )}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          <table className="w-full text-sm" style={{ minWidth: 560 }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "0.5px solid #F1EFE8",
-                  background: "#F7F5EE",
-                }}
-              >
-                {[
-                  "Order #",
-                  "Customer",
-                  "Status",
-                  "Items",
-                  "Delivery",
-                  "Created",
-                ].map((h, i) => (
-                  <th
-                    key={h}
-                    // className={
-                    //   i >= 3
-                    //     ? i === 3
-                    //       ? "hidden sm:table-cell"
-                    //       : "hidden md:table-cell"
-                    //     : ""
-                    // }
-                    style={{
-                      textAlign: "left",
-                      padding: "10px 18px",
-                      // fontSize: 9,
-                      fontWeight: 500,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      color: "#888780",
-                    }}
-                    className="text-[9px] 2xl:text-[12px]"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(
-                orders as (Order & {
-                  customer: { full_name: string; phone: string } | null;
-                })[]
-              ).map((order) => (
-                <ClickableOrderRow key={order.id} orderId={order.id}>
-                  <td style={{ padding: "12px 18px" }}>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+          <div
+            style={
+              {
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+              } as React.CSSProperties
+            }
+          >
+            <table className="w-full text-sm" style={{ minWidth: 560 }}>
+              <thead>
+                <tr
+                  style={{
+                    borderBottom: "0.5px solid #F1EFE8",
+                    background: "#F7F5EE",
+                  }}
+                >
+                  {[
+                    "Order #",
+                    "Customer",
+                    "Status",
+                    "Items",
+                    "Delivery",
+                    "Created",
+                  ].map((h, i) => (
+                    <th
+                      key={h}
+                      // className={
+                      //   i >= 3
+                      //     ? i === 3
+                      //       ? "hidden sm:table-cell"
+                      //       : "hidden md:table-cell"
+                      //     : ""
+                      // }
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 18px",
+                        // fontSize: 9,
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        color: "#888780",
+                      }}
+                      className="text-[9px] 2xl:text-[12px]"
                     >
-                      <span
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(
+                  orders as (Order & {
+                    customer: { full_name: string; phone: string } | null;
+                  })[]
+                ).map((order) => (
+                  <ClickableOrderRow key={order.id} orderId={order.id}>
+                    <td style={{ padding: "12px 18px" }}>
+                      <div
                         style={{
-                          fontFamily: "monospace",
-                          // fontSize: 12,
-                          fontWeight: 700,
-                          color: "#2C2C2A",
-                          letterSpacing: "-0.3px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
-                        className="text-[12px] 2xl:text-[15px]"
                       >
-                        {order.order_number}
-                      </span>
-                      {order.priority === 1 && (
                         <span
                           style={{
-                            // fontSize: 9,
-                            padding: "2px 7px",
-                            // background: "#2C2C2A",
-                            color: "#F1EFE8",
-                            borderRadius: 99,
-                            fontWeight: 500,
+                            fontFamily: "monospace",
+                            // fontSize: 12,
+                            fontWeight: 700,
+                            color: "#2C2C2A",
+                            letterSpacing: "-0.3px",
                           }}
-                          className="bg-red-400 text-[9px] 2xl:text-[12px]"
+                          className="text-[12px] 2xl:text-[15px]"
                         >
-                          Urgent
+                          {order.order_number}
                         </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: "12px 18px" }}>
-                    <p
+                        {order.priority === 1 && (
+                          <span
+                            style={{
+                              // fontSize: 9,
+                              padding: "2px 7px",
+                              // background: "#2C2C2A",
+                              color: "#F1EFE8",
+                              borderRadius: 99,
+                              fontWeight: 500,
+                            }}
+                            className="bg-red-400 text-[9px] 2xl:text-[12px]"
+                          >
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 18px" }}>
+                      <p
+                        style={{
+                          // fontSize: 13,
+                          fontWeight: 600,
+                          color: "#2C2C2A",
+                        }}
+                        className="text-[13px] 2xl:text-[16px]"
+                      >
+                        {order.customer?.full_name ?? "—"}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#888780" }}>
+                        {order.customer?.phone}
+                      </p>
+                    </td>
+                    <td style={{ padding: "12px 18px" }}>
+                      <OrderStatusBadge
+                        status={order.status as OrderStatus}
+                        className="text-[9px] 2xl:text-[15px]"
+                      />
+                    </td>
+                    <td
+                      // className="hidden sm:table-cell"
                       style={{
-                        // fontSize: 13,
-                        fontWeight: 600,
-                        color: "#2C2C2A",
+                        padding: "12px 18px",
+                        // fontSize: 12,
+                        color: "#5F5E5A",
                       }}
-                      className="text-[13px] 2xl:text-[16px]"
+                      className="text-[12px] 2xl:text-[15px]"
                     >
-                      {order.customer?.full_name ?? "—"}
-                    </p>
-                    <p style={{ fontSize: 11, color: "#888780" }}>
-                      {order.customer?.phone}
-                    </p>
-                  </td>
-                  <td style={{ padding: "12px 18px" }}>
-                    <OrderStatusBadge
-                      status={order.status as OrderStatus}
-                      className="text-[9px] 2xl:text-[15px]"
-                    />
-                  </td>
-                  <td
-                    // className="hidden sm:table-cell"
-                    style={{
-                      padding: "12px 18px",
-                      // fontSize: 12,
-                      color: "#5F5E5A",
-                    }}
-                    className="text-[12px] 2xl:text-[15px]"
-                  >
-                    {order.total_items}
-                  </td>
-                  <td
-                    // className="hidden md:table-cell"
-                    style={{
-                      padding: "12px 18px",
-                      // fontSize: 11,
-                      color: "#888780",
-                    }}
-                    className="text-[12px] 2xl:text-[15px]"
-                  >
-                    {order.delivery_date
-                      ? formatDate(order.delivery_date)
-                      : "—"}
-                  </td>
-                  <td
-                    // className="hidden md:table-cell"
-                    style={{
-                      padding: "12px 18px",
-                      // fontSize: 11,
-                      color: "#888780",
-                    }}
-                    className="text-[12px] 2xl:text-[15px]"
-                  >
-                    {formatDate(order.created_at)}
-                  </td>
-                </ClickableOrderRow>
-              ))}
-            </tbody>
-          </table>
+                      {order.total_items}
+                    </td>
+                    <td
+                      // className="hidden md:table-cell"
+                      style={{
+                        padding: "12px 18px",
+                        // fontSize: 11,
+                        color: "#888780",
+                      }}
+                      className="text-[12px] 2xl:text-[15px]"
+                    >
+                      {order.delivery_date
+                        ? formatDate(order.delivery_date)
+                        : "—"}
+                    </td>
+                    <td
+                      // className="hidden md:table-cell"
+                      style={{
+                        padding: "12px 18px",
+                        // fontSize: 11,
+                        color: "#888780",
+                      }}
+                      className="text-[12px] 2xl:text-[15px]"
+                    >
+                      {formatDate(order.created_at)}
+                    </td>
+                  </ClickableOrderRow>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

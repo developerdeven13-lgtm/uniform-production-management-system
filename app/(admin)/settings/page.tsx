@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import Link from 'next/link'
 import {
   Users, ShieldCheck, Bell, Palette, Database, ChevronRight,
@@ -53,7 +53,7 @@ const SETTING_GROUPS = [
 ]
 
 export default async function SettingsPage() {
-  const user = await requireUser()
+  const user = await requirePermission('settings.manage')
 
   return (
     <div className="space-y-8 max-w-2xl">

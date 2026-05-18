@@ -7,13 +7,14 @@ import {
   Menu, Plus, Scissors, Layers,
 } from 'lucide-react'
 import type { UserRole } from '@/types/app.types'
+import type { Permission } from '@/lib/permissions/permissions'
 
 interface BottomNavProps {
   onMoreClick: () => void
   role: UserRole
+  permissions: Permission[]
 }
 
-/* Defined outside the component so React sees a stable component reference */
 function NavItem({
   href,
   icon: Icon,
@@ -48,24 +49,25 @@ function NavItem({
   )
 }
 
-export function BottomNav({ onMoreClick, role }: BottomNavProps) {
+export function BottomNav({ onMoreClick, role, permissions }: BottomNavProps) {
   const pathname = usePathname()
+  const permSet = new Set(permissions)
 
   const active = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
 
-  const isTailor = role === 'tailor' || role === 'tailor_master'
+  const isTailor    = role === 'tailor' || role === 'tailor_master'
   const isEmbroidery = role === 'embroidery_staff'
-  const canCreate = role === 'admin' || role === 'super_admin'
+  const canCreate   = permSet.has('orders.create')
 
   const item2 = isTailor
     ? { label: 'My Tasks', href: '/my-tasks', icon: Scissors }
     : isEmbroidery
-    ? { label: 'Queue', href: '/queue', icon: Layers }
-    : { label: 'Orders', href: '/orders', icon: ClipboardList }
+    ? { label: 'Queue',    href: '/queue',    icon: Layers }
+    : { label: 'Orders',   href: '/orders',   icon: ClipboardList }
 
   const item4 = isTailor || isEmbroidery
-    ? { label: 'Orders', href: '/orders', icon: ClipboardList }
+    ? { label: 'Orders', href: '/orders',      icon: ClipboardList }
     : { label: 'Assign', href: '/assignments', icon: UserCheck }
 
   return (
@@ -76,13 +78,13 @@ export function BottomNav({ onMoreClick, role }: BottomNavProps) {
         style={{ borderTop: '0.5px solid #D3D1C7', height: 64 }}
         aria-label="Mobile navigation"
       >
-        <NavItem href="/dashboard"  icon={LayoutDashboard} label="Home"       active={active('/dashboard')} />
-        <NavItem href={item2.href}  icon={item2.icon}      label={item2.label} active={active(item2.href)} />
+        <NavItem href="/dashboard"  icon={LayoutDashboard} label="Home"        active={active('/dashboard')} />
+        <NavItem href={item2.href}  icon={item2.icon}       label={item2.label} active={active(item2.href)} />
 
         {/* Gap for FAB */}
         <div style={{ width: 64, flexShrink: 0 }} />
 
-        <NavItem href={item4.href}  icon={item4.icon}      label={item4.label} active={active(item4.href)} />
+        <NavItem href={item4.href}  icon={item4.icon}       label={item4.label} active={active(item4.href)} />
 
         {/* More */}
         <button
@@ -120,7 +122,6 @@ export function BottomNav({ onMoreClick, role }: BottomNavProps) {
           <Plus className="w-5 h-5 text-white" />
         </Link>
       ) : (
-        /* Placeholder keeps the gap intentional on non-admin roles */
         <div
           aria-hidden="true"
           className="lg:hidden fixed z-40 rounded-full"

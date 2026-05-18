@@ -9,53 +9,37 @@ import {
 import { logout } from '@/actions/auth'
 import type { ServerUser } from '@/lib/auth/server-session'
 import type { UserRole } from '@/types/app.types'
+import type { Permission } from '@/lib/permissions/permissions'
 
 interface MoreSheetProps {
   profile: ServerUser
+  permissions: Permission[]
   onClose: () => void
 }
 
-const SECONDARY_ITEMS: Record<string, { label: string; href: string; icon: React.ComponentType<{ className?: string }> }[]> = {
-  admin: [
-    { label: 'Customers', href: '/customers', icon: Users },
-    { label: 'Embroidery Queue', href: '/queue', icon: Layers },
-    { label: 'Reports', href: '/reports', icon: BarChart2 },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ],
-  super_admin: [
-    { label: 'Customers', href: '/customers', icon: Users },
-    { label: 'Embroidery Queue', href: '/queue', icon: Layers },
-    { label: 'Reports', href: '/reports', icon: BarChart2 },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ],
-  tailor: [
-    { label: 'Orders', href: '/orders', icon: ClipboardList },
-    { label: 'Embroidery Queue', href: '/queue', icon: Layers },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ],
-  tailor_master: [
-    { label: 'Orders', href: '/orders', icon: ClipboardList },
-    { label: 'Assignments', href: '/assignments', icon: UserCheck },
-    { label: 'Embroidery Queue', href: '/queue', icon: Layers },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ],
-  embroidery_staff: [
-    { label: 'My Tasks', href: '/my-tasks', icon: Scissors },
-    { label: 'Orders', href: '/orders', icon: ClipboardList },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ],
-  support_staff: [
-    { label: 'Customers', href: '/customers', icon: Users },
-    { label: 'Reports', href: '/reports', icon: BarChart2 },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ],
+interface NavItem {
+  label: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  permission?: Permission
+  roles?: UserRole[]
 }
 
-export function MoreSheet({ profile, onClose }: MoreSheetProps) {
+// All possible secondary nav items — filtered per-user by effective permissions
+const SECONDARY_ITEMS: NavItem[] = [
+  { label: 'Customers',        href: '/customers',   icon: Users,         permission: 'customers.read' },
+  { label: 'Orders',           href: '/orders',      icon: ClipboardList, permission: 'orders.read.all' },
+  { label: 'My Tasks',         href: '/my-tasks',    icon: Scissors,      roles: ['tailor', 'tailor_master'] },
+  { label: 'Embroidery Queue', href: '/queue',       icon: Layers,        permission: 'embroidery.update', roles: ['embroidery_staff', 'tailor_master', 'super_admin', 'admin'] },
+  { label: 'Assignments',      href: '/assignments', icon: UserCheck,     permission: 'assignments.create' },
+  { label: 'Reports',          href: '/reports',     icon: BarChart2,     permission: 'analytics.read' },
+  { label: 'Settings',         href: '/settings',    icon: Settings,      permission: 'settings.manage' },
+]
+
+export function MoreSheet({ profile, permissions, onClose }: MoreSheetProps) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Trigger slide-up on next frame
     const frame = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(frame)
   }, [])
@@ -69,7 +53,14 @@ export function MoreSheet({ profile, onClose }: MoreSheetProps) {
   }, [onClose])
 
   const role = profile.role as UserRole
-  const items = SECONDARY_ITEMS[role] ?? []
+  const permSet = new Set(permissions)
+
+  const items = SECONDARY_ITEMS.filter(item => {
+    if (item.roles && !item.permission) return item.roles.includes(role)
+    if (item.roles && item.permission) return item.roles.includes(role) || permSet.has(item.permission)
+    if (item.permission) return permSet.has(item.permission)
+    return true
+  })
 
   const initials = profile.full_name
     .split(' ')

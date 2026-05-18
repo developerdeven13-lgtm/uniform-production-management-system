@@ -1,13 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { PageTitle } from '@/components/shared/PageTitle'
 import { MyTasksList } from '@/components/assignments/MyTasksList'
 
 export default async function MyTasksPage() {
-  // requireUser() is just for the session guard + role check (reads headers).
-  // For the actual DB query we use supabase.auth.getUser() so the user ID
-  // comes from the same JWT that Supabase RLS evaluates — avoids any mismatch.
-  await requireUser()
+  await requirePermission('orders.read.own')
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()

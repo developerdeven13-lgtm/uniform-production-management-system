@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requireAnyPermission } from '@/lib/auth/require-permission'
 import { AssignmentBoard } from '@/components/assignments/AssignmentBoard'
 import { PageTitle } from '@/components/shared/PageTitle'
 import type { Profile } from '@/types/app.types'
 
 export default async function AssignmentsPage() {
-  await requireUser()
+  await requireAnyPermission(['assignments.create', 'assignments.read'])
   const supabase = await createClient()
 
   const { data: unassignedItems } = await supabase

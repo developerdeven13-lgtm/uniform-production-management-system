@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
@@ -11,7 +11,7 @@ export default async function EditCustomerPage({
 }: {
   params: Promise<{ customerId: string }>
 }) {
-  await requireUser()
+  await requirePermission('customers.update')
   const supabase = await createClient()
 
   const { customerId } = await params

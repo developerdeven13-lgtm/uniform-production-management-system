@@ -12,6 +12,7 @@ export type Permission =
   | 'orders.read.own'
   | 'orders.confirm'
   | 'orders.cancel'
+  | 'orders.update'
   | 'orders.advance_status'
   | 'orders.delete'
   | 'measurements.create'
@@ -44,6 +45,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'orders.read.own':       'View Own Orders',
   'orders.confirm':        'Confirm Orders',
   'orders.cancel':         'Cancel Orders',
+  'orders.update':         'Edit Orders',
   'orders.advance_status': 'Advance Order Status',
   'orders.delete':         'Delete Orders',
   'measurements.create':   'Add Measurements',
@@ -68,7 +70,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
 export const PERMISSION_GROUPS: { label: string; permissions: Permission[] }[] = [
   { label: 'Users',        permissions: ['users.manage', 'users.view'] },
   { label: 'Customers',    permissions: ['customers.create', 'customers.read', 'customers.update', 'customers.delete'] },
-  { label: 'Orders',       permissions: ['orders.create', 'orders.read.all', 'orders.read.own', 'orders.confirm', 'orders.cancel', 'orders.advance_status', 'orders.delete'] },
+  { label: 'Orders',       permissions: ['orders.create', 'orders.read.all', 'orders.read.own', 'orders.confirm', 'orders.cancel', 'orders.update', 'orders.advance_status', 'orders.delete'] },
   { label: 'Measurements', permissions: ['measurements.create', 'measurements.read', 'measurements.update'] },
   { label: 'Assignments',  permissions: ['assignments.create', 'assignments.read', 'assignments.update'] },
   { label: 'Embroidery',   permissions: ['embroidery.assign', 'embroidery.update'] },
@@ -82,7 +84,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'users.manage', 'users.view',
     'customers.create', 'customers.read', 'customers.update', 'customers.delete',
     'orders.create', 'orders.read.all', 'orders.read.own',
-    'orders.confirm', 'orders.cancel', 'orders.advance_status', 'orders.delete',
+    'orders.confirm', 'orders.cancel', 'orders.update', 'orders.advance_status', 'orders.delete',
     'measurements.create', 'measurements.read', 'measurements.update',
     'assignments.create', 'assignments.read', 'assignments.update',
     'embroidery.assign', 'embroidery.update',
@@ -98,7 +100,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'users.manage', 'users.view',
     'customers.create', 'customers.read', 'customers.update', 'customers.delete',
     'orders.create', 'orders.read.all', 'orders.read.own',
-    'orders.confirm', 'orders.cancel', 'orders.advance_status', 'orders.delete',
+    'orders.confirm', 'orders.cancel', 'orders.update', 'orders.advance_status', 'orders.delete',
     'measurements.create', 'measurements.read', 'measurements.update',
     'assignments.create', 'assignments.read', 'assignments.update',
     'embroidery.assign', 'embroidery.update',
@@ -112,7 +114,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   support_staff: [
     'customers.create', 'customers.read', 'customers.update',
     'orders.create', 'orders.read.all', 'orders.read.own',
-    'orders.confirm', 'orders.cancel',
+    'orders.confirm', 'orders.cancel', 'orders.update',
     'measurements.create', 'measurements.read', 'measurements.update',
     'media.upload',
     'ai.voice_intake',

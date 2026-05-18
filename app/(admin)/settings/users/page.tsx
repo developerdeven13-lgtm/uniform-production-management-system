@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { getUsers } from '@/actions/users'
 import Link from 'next/link'
 import { Plus, UserCircle2 } from 'lucide-react'
@@ -16,7 +16,7 @@ const ROLE_BADGE: Record<UserRole, { bg: string; color: string }> = {
 }
 
 export default async function UsersPage() {
-  await requireUser()
+  await requirePermission('users.manage')
   const result = await getUsers()
   const users = result.success ? result.data : []
   const total = users.length

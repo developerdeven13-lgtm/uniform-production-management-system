@@ -8,8 +8,13 @@ export function userPermsCacheTag(userId: string) {
 }
 
 /*
- * Returns the effective permission set for a user: role defaults merged with
+ * Returns the effective permission list for a user: role defaults merged with
  * any per-user overrides stored in user_privilege_overrides.
+ *
+ * Returns a plain Permission[] (not a Set) so the value is JSON-serializable
+ * and survives Next.js unstable_cache serialization/deserialization correctly.
+ * A Set round-trips through JSON.stringify as '{}' — an empty object — which
+ * would cause every cache hit to return an empty permission list.
  *
  * Uses unstable_cache with a per-user tag so:
  *  • Served from Next.js cache on every request after the first (no DB hit)
@@ -19,7 +24,7 @@ export function userPermsCacheTag(userId: string) {
  * The admin client is used so this can run inside unstable_cache
  * (which has no access to request-scoped cookies).
  */
-export function getUserPermissions(userId: string, role: UserRole): Promise<Set<Permission>> {
+export function getUserPermissions(userId: string, role: UserRole): Promise<Permission[]> {
   return unstable_cache(
     async () => {
       const supabase = createAdminClient()
@@ -38,7 +43,7 @@ export function getUserPermissions(userId: string, role: UserRole): Promise<Set<
         }
       }
 
-      return perms
+      return Array.from(perms)
     },
     [userPermsCacheTag(userId)],
     { revalidate: 60, tags: [userPermsCacheTag(userId)] }
@@ -51,5 +56,5 @@ export async function userCan(
   permission: Permission
 ): Promise<boolean> {
   const perms = await getUserPermissions(userId, role)
-  return perms.has(permission)
+  return perms.includes(permission)
 }

@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { requireUser } from '@/lib/auth/server-session'
+import { getUserPermissions } from '@/lib/permissions/user-permissions'
 
 function SidebarSkeleton() {
   return (
@@ -39,9 +40,13 @@ export default async function AdminLayout({
   mobileSidebar: React.ReactNode
 }) {
   const user = await requireUser()
+  // Fetch effective permissions (role defaults + per-user overrides) for nav filtering
+  const permissions = await getUserPermissions(user.id, user.role)
+
   return (
     <AppShell
       profile={user}
+      permissions={permissions}
       rightSidebar={
         <Suspense fallback={<SidebarSkeleton />}>
           {sidebar}

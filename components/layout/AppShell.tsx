@@ -11,15 +11,17 @@ import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { cn } from '@/lib/utils/cn'
 import type { ServerUser } from '@/lib/auth/server-session'
 import type { UserRole } from '@/types/app.types'
+import type { Permission } from '@/lib/permissions/permissions'
 
 interface AppShellProps {
   children: React.ReactNode
   profile: ServerUser
+  permissions: Permission[]
   rightSidebar?: React.ReactNode
   mobileStats?: React.ReactNode
 }
 
-export function AppShell({ children, profile, rightSidebar, mobileStats }: AppShellProps) {
+export function AppShell({ children, profile, permissions, rightSidebar, mobileStats }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [rightOpen, setRightOpen]         = useState(true)
   const [searchOpen, setSearchOpen]       = useState(false)
@@ -90,7 +92,7 @@ export function AppShell({ children, profile, rightSidebar, mobileStats }: AppSh
 
         {/* Desktop left sidebar */}
         <div className="hidden lg:flex shrink-0">
-          <Sidebar profile={profile} />
+          <Sidebar profile={profile} permissions={permissions} />
         </div>
 
         {/* Mobile sidebar drawer */}
@@ -98,7 +100,7 @@ export function AppShell({ children, profile, rightSidebar, mobileStats }: AppSh
           <div className="lg:hidden fixed inset-0 z-40 flex">
             <div className="fixed inset-0 bg-black/50" onClick={closeSidebar} />
             <div className="relative z-50 flex">
-              <Sidebar profile={profile} onClose={closeSidebar} />
+              <Sidebar profile={profile} permissions={permissions} onClose={closeSidebar} />
             </div>
           </div>
         )}
@@ -150,11 +152,11 @@ export function AppShell({ children, profile, rightSidebar, mobileStats }: AppSh
         )}
 
         {/* Mobile bottom nav + FAB */}
-        <BottomNav onMoreClick={openMore} role={profile.role as UserRole} />
+        <BottomNav onMoreClick={openMore} role={profile.role as UserRole} permissions={permissions} />
 
         {/* Global overlays */}
         {searchOpen    && <SearchOverlay onClose={closeSearch} />}
-        {moreSheetOpen && <MoreSheet profile={profile} onClose={closeMore} />}
+        {moreSheetOpen && <MoreSheet profile={profile} permissions={permissions} onClose={closeMore} />}
 
       </div>
     </>

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { NewOrderShell } from '@/components/orders/NewOrderShell'
@@ -10,7 +10,7 @@ export default async function NewOrderPage({
 }: {
   searchParams: Promise<{ customer_id?: string; mode?: string }>
 }) {
-  await requireUser()
+  await requirePermission('orders.create')
   const supabase = await createClient()
 
   const params = await searchParams

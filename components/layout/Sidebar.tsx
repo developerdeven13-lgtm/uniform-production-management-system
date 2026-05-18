@@ -7,7 +7,6 @@ import {
   Scissors, Layers, BarChart2, Settings, X, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import { can } from '@/lib/permissions/can'
 import { logout } from '@/actions/auth'
 import type { UserRole } from '@/types/app.types'
 import type { Permission } from '@/lib/permissions/permissions'
@@ -22,31 +21,34 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Customers', href: '/customers', icon: Users, permission: 'customers.read' },
-  { label: 'Orders', href: '/orders', icon: ClipboardList, permission: 'orders.read.all' },
-  { label: 'My Tasks', href: '/my-tasks', icon: Scissors, roles: ['tailor', 'tailor_master'] },
-  {
-    label: 'Embroidery Queue', href: '/queue', icon: Layers,
-    roles: ['embroidery_staff', 'tailor_master', 'super_admin', 'admin'],
-  },
-  { label: 'Assignments', href: '/assignments', icon: UserCheck, permission: 'assignments.create' },
-  { label: 'Reports', href: '/reports', icon: BarChart2, permission: 'analytics.read' },
-  { label: 'Settings', href: '/settings', icon: Settings, permission: 'settings.manage' },
+  { label: 'Dashboard',        href: '/dashboard',   icon: LayoutDashboard },
+  { label: 'Customers',        href: '/customers',   icon: Users,         permission: 'customers.read' },
+  { label: 'Orders',           href: '/orders',      icon: ClipboardList, permission: 'orders.read.all' },
+  { label: 'My Tasks',         href: '/my-tasks',    icon: Scissors,      roles: ['tailor', 'tailor_master'] },
+  { label: 'Embroidery Queue', href: '/queue',       icon: Layers,        permission: 'embroidery.update', roles: ['embroidery_staff', 'tailor_master', 'super_admin', 'admin'] },
+  { label: 'Assignments',      href: '/assignments', icon: UserCheck,     permission: 'assignments.create' },
+  { label: 'Reports',          href: '/reports',     icon: BarChart2,     permission: 'analytics.read' },
+  { label: 'Settings',         href: '/settings',    icon: Settings,      permission: 'settings.manage' },
 ]
 
 interface SidebarProps {
   profile: ServerUser
+  permissions: Permission[]
   onClose?: () => void
 }
 
-export function Sidebar({ profile, onClose }: SidebarProps) {
+export function Sidebar({ profile, permissions, onClose }: SidebarProps) {
   const pathname = usePathname()
   const role = profile.role as UserRole
+  const permSet = new Set(permissions)
 
   const visibleItems = NAV_ITEMS.filter(item => {
-    if (item.roles) return item.roles.includes(role)
-    if (item.permission) return can(role, item.permission)
+    // Items with explicit roles list use role check (structural nav, not permission-gated)
+    if (item.roles && !item.permission) return item.roles.includes(role)
+    // Items with both roles and permission: role OR permission grants access
+    if (item.roles && item.permission) return item.roles.includes(role) || permSet.has(item.permission)
+    // Permission-only items: check effective permissions (includes overrides)
+    if (item.permission) return permSet.has(item.permission)
     return true
   })
 

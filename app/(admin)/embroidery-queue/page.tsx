@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth/server-session'
+import { requireAnyPermission } from '@/lib/auth/require-permission'
 import { createClient } from '@/lib/supabase/server'
 import { getEmbroideryQueue } from '@/actions/embroidery'
 import { EmbroideryQueueList } from '@/components/assignments/EmbroideryQueueList'
@@ -6,7 +6,7 @@ import { PageTitle } from '@/components/shared/PageTitle'
 import type { Profile } from '@/types/app.types'
 
 export default async function EmbroideryQueuePage() {
-  await requireUser()
+  await requireAnyPermission(['embroidery.update', 'embroidery.assign'])
   const supabase = await createClient()
 
   const [queueResult, staffRes] = await Promise.all([

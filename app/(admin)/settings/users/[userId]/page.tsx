@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth/server-session'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { getUserWithOverrides } from '@/actions/users'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -24,7 +24,7 @@ export default async function UserDetailPage({
 }: {
   params: Promise<{ userId: string }>
 }) {
-  const admin = await requireUser()
+  const admin = await requirePermission('users.manage')
   const { userId } = await params
 
   const result = await getUserWithOverrides(userId)

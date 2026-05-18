@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth/server-session'
+import { requireAnyPermission } from '@/lib/auth/require-permission'
 import { getEmbroideryQueue } from '@/actions/embroidery'
 import { EmbroideryQueueList } from '@/components/assignments/EmbroideryQueueList'
 
 export default async function EmbroideryQueuePage() {
-  await requireUser()
+  await requireAnyPermission(['embroidery.update', 'embroidery.assign'])
   const supabase = await createClient()
 
   const { data: embroideryStaff } = await supabase
